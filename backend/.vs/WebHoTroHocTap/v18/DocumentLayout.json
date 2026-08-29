@@ -1,0 +1,214 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\WebHoTroHocTap.sln\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\webhotrohoctap.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\webhotrohoctap.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\dtos\\auth\\loginrequestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\dtos\\auth\\loginrequestdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.business\\webhotrohoctap.business.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|solutionrelative:webhotrohoctap.business\\webhotrohoctap.business.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4D3335AF-095F-473F-9766-75110CC3C22E}|WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.dataaccess\\webhotrohoctap.dataaccess.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{4D3335AF-095F-473F-9766-75110CC3C22E}|WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj|solutionrelative:webhotrohoctap.dataaccess\\webhotrohoctap.dataaccess.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.business\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|solutionrelative:webhotrohoctap.business\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4D3335AF-095F-473F-9766-75110CC3C22E}|WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.dataaccess\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4D3335AF-095F-473F-9766-75110CC3C22E}|WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj|solutionrelative:webhotrohoctap.dataaccess\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\dtos\\common\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\dtos\\common\\apiresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.business\\services\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{84455B9B-19A3-4D3A-B23E-0725339A306F}|WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj|solutionrelative:webhotrohoctap.business\\services\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|e:\\webhotrohoctap.sln\\webhotrohoctap.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{C25D47E7-A4CF-4BE7-98A2-81FD352D24FE}|WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj|solutionrelative:webhotrohoctap.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 597,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "WebHoTroHocTap.Business.csproj",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj",
+              "RelativeToolTip": "WebHoTroHocTap.Business\\WebHoTroHocTap.Business.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-08-29T16:33:52.31Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "WebHoTroHocTap.API.csproj",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj",
+              "RelativeToolTip": "WebHoTroHocTap.API\\WebHoTroHocTap.API.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-08-29T16:45:16.168Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "WebHoTroHocTap.DataAccess.csproj",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj",
+              "RelativeToolTip": "WebHoTroHocTap.DataAccess\\WebHoTroHocTap.DataAccess.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-08-29T16:18:46.107Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.DataAccess\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.DataAccess\\AppDbContext.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.DataAccess\\AppDbContext.cs",
+              "RelativeToolTip": "WebHoTroHocTap.DataAccess\\AppDbContext.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAywDQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:21:40.304Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\Controllers\\AuthController.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "WebHoTroHocTap.API\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAADQAAAAAAAAAAAAowEsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:48:09.336Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LoginRequestDto.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\DTOs\\Auth\\LoginRequestDto.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\DTOs\\Auth\\LoginRequestDto.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\DTOs\\Auth\\LoginRequestDto.cs",
+              "RelativeToolTip": "WebHoTroHocTap.API\\DTOs\\Auth\\LoginRequestDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:47:34.007Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.Business\\Services\\AuthService.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\Services\\AuthService.cs",
+              "RelativeToolTip": "WebHoTroHocTap.Business\\Services\\AuthService.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAiwB8AAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:36:43.449Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ApiResponse.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\DTOs\\Common\\ApiResponse.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\DTOs\\Common\\ApiResponse.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\DTOs\\Common\\ApiResponse.cs",
+              "RelativeToolTip": "WebHoTroHocTap.API\\DTOs\\Common\\ApiResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:46:53.005Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\Services\\IAuthService.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.Business\\Services\\IAuthService.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.Business\\Services\\IAuthService.cs",
+              "RelativeToolTip": "WebHoTroHocTap.Business\\Services\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T16:35:50.444Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Program.cs",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\Program.cs",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\Program.cs",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\Program.cs",
+              "RelativeToolTip": "WebHoTroHocTap.API\\Program.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAuwDYAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-29T15:54:45.973Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\appsettings.json",
+              "RelativeDocumentMoniker": "WebHoTroHocTap.API\\appsettings.json",
+              "ToolTip": "E:\\WebHoTroHocTap.sln\\WebHoTroHocTap.API\\appsettings.json",
+              "RelativeToolTip": "WebHoTroHocTap.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-08-29T16:26:37.235Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 257,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

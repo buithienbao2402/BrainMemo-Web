@@ -1,0 +1,14 @@
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\bin\Debug\net9.0\WebHoTroHocTap.DataAccess.deps.json
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\bin\Debug\net9.0\WebHoTroHocTap.DataAccess.runtimeconfig.json
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\bin\Debug\net9.0\WebHoTroHocTap.DataAccess.dll
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\bin\Debug\net9.0\WebHoTroHocTap.DataAccess.pdb
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.csproj.AssemblyReference.cache
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.AssemblyInfoInputs.cache
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.AssemblyInfo.cs
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.csproj.CoreCompileInputs.cache
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.dll
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\refint\WebHoTroHocTap.DataAccess.dll
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.pdb
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\WebHoTroHocTap.DataAccess.genruntimeconfig.cache
+E:\WebHoTroHocTap.sln\WebHoTroHocTap.DataAccess\obj\Debug\net9.0\ref\WebHoTroHocTap.DataAccess.dll
