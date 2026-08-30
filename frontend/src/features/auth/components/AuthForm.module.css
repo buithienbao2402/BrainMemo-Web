@@ -1,0 +1,29 @@
+.form {
+  width: 100%;
+  max-width: 380px;
+}
+
+.title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.85rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 1.75rem;
+}
+
+/* Mantine v7 Button đọc màu qua css var --button-bg / --button-hover,
+   nên override theo cách này thay vì !important lên background-color. */
+.submitButton {
+  --button-bg: #ff7a18;
+  --button-hover: #e86a0c;
+}
+
+.link {
+  color: #ff7a18;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pinInput {
+  justify-content: space-between;
+}
