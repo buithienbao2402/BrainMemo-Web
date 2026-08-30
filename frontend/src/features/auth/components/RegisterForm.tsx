@@ -1,0 +1,124 @@
+import { useState } from 'react';
+import { TextInput, PasswordInput, Button, Alert, Anchor, Text } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { IconUser, IconMail, IconLock, IconAlertCircle } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
+import type { AxiosError } from 'axios';
+import type { ApiResponse } from '@/shared/types/api.types';
+import { useRequestRegisterOtp } from '../hooks/useRegister';
+import type { RegisterRequestOtpPayload } from '../types/auth.types';
+import classes from './AuthForm.module.css';
+
+interface RegisterFormValues {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface RegisterFormProps {
+  /** Gọi khi request-otp thành công, kèm payload để bước OTP có thể dùng lại (resend). */
+  onSuccess: (payload: RegisterRequestOtpPayload) => void;
+}
+
+export function RegisterForm({ onSuccess }: RegisterFormProps) {
+  const { mutate, isPending } = useRequestRegisterOtp();
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const form = useForm<RegisterFormValues>({
+    initialValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    validate: {
+      fullName: (value) => (value.trim().length < 2 ? 'Họ và tên phải có ít nhất 2 ký tự' : null),
+      email: (value) => (/^\S+@\S+\.\S+$/.test(value) ? null : 'Email không hợp lệ'),
+      password: (value) => (value.length < 8 ? 'Mật khẩu phải có ít nhất 8 ký tự' : null),
+      confirmPassword: (value, values) =>
+        value !== values.password ? 'Mật khẩu xác nhận không khớp' : null,
+    },
+  });
+
+  const handleSubmit = form.onSubmit((values) => {
+    setServerError(null);
+    const payload: RegisterRequestOtpPayload = {
+      email: values.email.trim(),
+      password: values.password,
+      fullName: values.fullName.trim(),
+    };
+
+    mutate(payload, {
+      onSuccess: () => onSuccess(payload),
+      onError: (err) => {
+        const axiosErr = err as AxiosError<ApiResponse<null>>;
+        const message =
+          axiosErr.response?.data?.errors?.[0]?.message ??
+          axiosErr.response?.data?.message ??
+          'Đăng ký thất bại. Vui lòng thử lại.';
+        setServerError(message);
+      },
+    });
+  });
+
+  return (
+    <form onSubmit={handleSubmit} className={classes.form} noValidate>
+      <h1 className={classes.title}>Đăng ký</h1>
+
+      {serverError && (
+        <Alert icon={<IconAlertCircle size={16} />} color="red" mb="md" variant="light">
+          {serverError}
+        </Alert>
+      )}
+
+      <TextInput
+        label="Họ và tên"
+        placeholder="Nguyễn Văn A"
+        leftSection={<IconUser size={16} />}
+        size="md"
+        mb="md"
+        {...form.getInputProps('fullName')}
+      />
+
+      <TextInput
+        label="Email"
+        placeholder="ten@vidu.com"
+        leftSection={<IconMail size={16} />}
+        size="md"
+        mb="md"
+        {...form.getInputProps('email')}
+      />
+
+      <PasswordInput
+        label="Mật khẩu"
+        placeholder="••••••••"
+        leftSection={<IconLock size={16} />}
+        size="md"
+        mb="md"
+        {...form.getInputProps('password')}
+      />
+
+      <PasswordInput
+        label="Xác nhận mật khẩu"
+        placeholder="••••••••"
+        leftSection={<IconLock size={16} />}
+        size="md"
+        mb="xl"
+        {...form.getInputProps('confirmPassword')}
+      />
+
+      <Button
+        type="submit"
+        fullWidth
+        size="md"
+        loading={isPending}
+        classNames={{ root: classes.submitButton }}
+      >
+        Đăng ký
+      </Button>
+
+      <Text ta="center" mt="lg" size="sm" c="dimmed">
+        Đã có tài khoản?{' '}
+        <Anchor component={Link} to="/login" className={classes.link}>
+          Đăng nhập
+        </Anchor>
+      </Text>
+    </form>
+  );
+}
