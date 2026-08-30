@@ -1,7 +1,0 @@
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.csproj.AssemblyReference.cache
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\rpswa.dswa.cache.json
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.GeneratedMSBuildEditorConfig.editorconfig
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.AssemblyInfoInputs.cache
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.AssemblyInfo.cs
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.csproj.CoreCompileInputs.cache
-E:\WebHoTroHocTap.sln\WebHoTroHocTap.API\obj\Debug\net10.0\WebHoTroHocTap.API.MvcApplicationPartsAssemblyInfo.cache
