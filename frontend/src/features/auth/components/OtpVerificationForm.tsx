@@ -4,15 +4,15 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import type { ApiResponse } from '@/shared/types/api.types';
-import { useRequestRegisterOtp, useVerifyRegisterOtp } from '../hooks/useRegister';
+import { useRequestRegisterOtp, useVerifyRegisterOtp } from '../hooks/useAuth';
 import type { RegisterRequestOtpPayload } from '../types/auth.types';
 import classes from './AuthForm.module.css';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 interface OtpVerificationFormProps {
-  /** Payload đã dùng ở bước 1 — cần lại đủ { email, password, fullName } để "Gửi lại mã"
-   * vì request-otp yêu cầu đủ 3 trường (xem API_Contract.md mục 2). */
+  /** Payload từ bước 1 — cần lại đủ { email, password, fullName } để "Gửi lại mã",
+   * vì request-otp yêu cầu đủ 3 trường (API_Contract.md mục 2). */
   payload: RegisterRequestOtpPayload;
   onBack: () => void;
 }
@@ -50,7 +50,8 @@ export function OtpVerificationForm({ payload, onBack }: OtpVerificationFormProp
       { email: payload.email, otp },
       {
         onSuccess: () => navigate('/login', { state: { justRegistered: true } }),
-        onError: (err) => setServerError(extractErrorMessage(err, 'Mã OTP không đúng hoặc đã hết hạn.')),
+        onError: (err) =>
+          setServerError(extractErrorMessage(err, 'Mã OTP không đúng hoặc đã hết hạn.')),
       }
     );
   };
@@ -64,7 +65,8 @@ export function OtpVerificationForm({ payload, onBack }: OtpVerificationFormProp
         setCooldown(RESEND_COOLDOWN_SECONDS);
         setInfoMessage('Đã gửi lại mã OTP, vui lòng kiểm tra email.');
       },
-      onError: (err) => setServerError(extractErrorMessage(err, 'Không thể gửi lại mã. Vui lòng thử lại.')),
+      onError: (err) =>
+        setServerError(extractErrorMessage(err, 'Không thể gửi lại mã. Vui lòng thử lại.')),
     });
   };
 
@@ -72,7 +74,7 @@ export function OtpVerificationForm({ payload, onBack }: OtpVerificationFormProp
     <div className={classes.form}>
       <h1 className={classes.title}>Xác thực OTP</h1>
       <Text size="sm" c="dimmed" mb="xl">
-        Mã xác thực gồm 6 chữ số đã được gửi đến <strong>{payload.email}</strong>
+        Mã xác thực đã được gửi tới email <strong>{payload.email}</strong>
       </Text>
 
       {serverError && (
