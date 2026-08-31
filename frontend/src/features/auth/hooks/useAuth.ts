@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api/auth.api';
+import { useAuthStore } from '../store/authStore';
 import type {
   LoginPayload,
   RegisterRequestOtpPayload,
@@ -7,8 +8,17 @@ import type {
 } from '../types/auth.types';
 
 export function useLogin() {
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
+    onSuccess: (response) => {
+      // Bóc token và user từ API Backend lưu vào Zustand
+      if (response.data) {
+        const { accessToken, user } = response.data;
+        setAuth(accessToken, user);
+      }
+    }
   });
 }
 
