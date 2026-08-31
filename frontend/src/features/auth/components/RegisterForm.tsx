@@ -5,7 +5,7 @@ import { IconUser, IconMail, IconLock, IconAlertCircle } from '@tabler/icons-rea
 import { Link } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import type { ApiResponse } from '@/shared/types/api.types';
-import { useRequestRegisterOtp } from '../hooks/useRegister';
+import { useRequestRegisterOtp } from '../hooks/useAuth';
 import type { RegisterRequestOtpPayload } from '../types/auth.types';
 import classes from './AuthForm.module.css';
 
