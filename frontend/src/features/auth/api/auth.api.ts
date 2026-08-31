@@ -2,13 +2,18 @@ import { apiClient } from '@/shared/lib/axios';
 import type { ApiResponse } from '@/shared/types/api.types';
 import type {
   LoginPayload,
-  LoginResponseData,
   RegisterRequestOtpPayload,
   RegisterVerifyPayload,
 } from '../types/auth.types';
+import type { UserProfile } from '../store/authStore';
+
+export interface LoginResponseData {
+  accessToken: string;
+  user: UserProfile; // Update type theo thực tế backend
+}
 
 export const authApi = {
-  /** POST /api/auth/login -> access token + Set-Cookie refresh token */
+  /** POST /api/auth/login -> access token + user info + Set-Cookie refresh token */
   login: async (payload: LoginPayload) => {
     const { data } = await apiClient.post<ApiResponse<LoginResponseData>>('/auth/login', payload);
     return data;
@@ -28,4 +33,16 @@ export const authApi = {
     const { data } = await apiClient.post<ApiResponse<null>>('/auth/register/verify', payload);
     return data;
   },
+
+  /** POST /api/auth/refresh-token -> đọc cookie -> trả access token mới */
+  refreshToken: async () => {
+    const { data } = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/refresh-token');
+    return data;
+  },
+
+  /** GET /api/users/me -> Lấy thông tin user hiện tại */
+  getCurrentUser: async () => {
+    const { data } = await apiClient.get<ApiResponse<UserProfile>>('/users/me');
+    return data;
+  }
 };
