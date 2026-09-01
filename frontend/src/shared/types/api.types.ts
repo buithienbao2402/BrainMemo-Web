@@ -13,3 +13,11 @@ export interface ApiResponse<T> {
   data: T;
   errors: ApiFieldError[] | null;
 }
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
