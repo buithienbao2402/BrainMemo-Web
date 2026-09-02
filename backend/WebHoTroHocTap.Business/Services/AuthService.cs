@@ -1,65 +1,66 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using WebHoTroHocTap.Business.DTOs;
 using WebHoTroHocTap.DataAccess;
-using WebHoTroHocTap.DataAccess.Entities;
 
-namespace WebHoTroHocTap.Business.Services
+namespace WebHoTroHocTap.Business.Services;
+
+public class AuthService : IAuthService
 {
-    public class AuthService : IAuthService
-    {
-        private readonly AppDbContext _dbContext;
+    private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
-        public AuthService(AppDbContext dbContext)
+    public AuthService(AppDbContext context, IConfiguration configuration)
+    {
+        _context = context;
+        _configuration = configuration;
+    }
+
+    public async Task<LoginResponseDto?> LoginAsync(string email, string password)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        // Kiểm tra mật khẩu (chỉnh lại thuộc tính mật khẩu khớp với Entity User của bạn: user.Password hoặc user.PasswordHash)
+        if (user == null || user.PasswordHash != password)
         {
-            _dbContext = dbContext;
+            return null;
         }
 
-        public async Task<(string AccessToken, string RefreshToken, User User)> LoginAsync(string email, string password, string jwtKey, string issuer, string audience)
+        // Lấy secret key từ cấu hình Jwt:Key (hoặc chuỗi mặc định tối thiểu 32 ký tự)
+        var jwtKey = _configuration["Jwt:Key"] ?? "WebHoTroHocTap_Secret_Key_For_JWT_Authentication_2026";
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+
+        var claims = new List<Claim>
         {
-            // Tìm kiếm user theo email trong CSDL
-            var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Email == email);
+            new Claim("userId", user.UserId.ToString()),
+            new Claim("email", user.Email)
+        };
 
-            if (user == null || user.PasswordHash != password)
-                throw new Exception("Tài khoản hoặc mật khẩu không chính xác");
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(2),
+            SigningCredentials = creds
+        };
 
-            // Khởi tạo danh sách Claims tách biệt rõ ràng (đảm bảo đúng 2 tham số: type và value)
-            var claims = new List<System.Security.Claims.Claim>
-{
-    new System.Security.Claims.Claim("userId", user.UserId.ToString()),
-    new System.Security.Claims.Claim("email", user.Email)
-};
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        string tokenString = tokenHandler.WriteToken(token);
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
-
-            // Tạo Access Token (hạn 30 phút)[cite: 1]
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                Issuer = issuer,
-                Audience = audience,
-                SigningCredentials = creds
-            };
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var accessToken = tokenHandler.WriteToken(token);
-
-            // Tạo Refresh Token (30 ngày) lưu vào bảng refresh_token[cite: 1, 2]
-            var refreshToken = Guid.NewGuid().ToString("N");
-            _dbContext.RefreshTokens.Add(new RefreshToken
+        return new LoginResponseDto
+        {
+            AccessToken = tokenString,
+            User = new UserDto
             {
                 UserId = user.UserId,
-                TokenHash = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30)
-            });
-            await _dbContext.SaveChangesAsync();
-
-            return (accessToken, refreshToken, user);
-        }
+                Email = user.Email,
+                FullName = user.FullName ?? user.Email // Đổi sang đúng tên cột Họ tên nếu trong DB đặt khác
+            }
+        };
     }
 }
