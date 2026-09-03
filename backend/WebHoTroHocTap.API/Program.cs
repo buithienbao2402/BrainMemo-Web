@@ -74,6 +74,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 
 builder.Services.AddAuthorization();
 var app = builder.Build();
