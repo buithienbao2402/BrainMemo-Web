@@ -55,6 +55,7 @@ public class AuthService : IAuthService
         return new LoginResponseDto
         {
             AccessToken = tokenString,
+            RefreshToken = Guid.NewGuid().ToString(),
             User = new UserDto
             {
                 UserId = user.UserId,
