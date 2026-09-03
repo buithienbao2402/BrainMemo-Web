@@ -14,26 +14,20 @@ export function AppRouter() {
       {/* Các route không cần đăng nhập */}
       <Route path="/login" element={accessToken ? <Navigate to="/creator/dashboard" replace /> : <LoginPage />} />
       <Route path="/register" element={accessToken ? <Navigate to="/creator/dashboard" replace /> : <RegisterPage />} />
-      
-      {/* =========================================
-          TODO: LUỒNG THẬT (MỞ KHÓA KHI CÓ BACKEND) 
-          <Route path="/creator/dashboard" element={accessToken ? <CreatorDashboard /> : <Navigate to="/login" replace />} /> 
-          <Route path="/creator/courses/:id" element={accessToken ? <CourseDashboardLayout><CourseDetailDashboard /></CourseDashboardLayout> : <Navigate to="/login" replace />} />
-          ========================================= */}
 
-      {/* TODO: LUỒNG FAKE (XÓA KHI CÓ BACKEND) - Bypass login để test giao diện */}
-      <Route path="/creator/dashboard" element={<CreatorDashboard />} />
+      <Route path="/creator/dashboard" element={accessToken ? <CreatorDashboard /> : <Navigate to="/login" replace />} />
+      <Route path="/creator/courses/:id" element={accessToken ? <CourseDashboardLayout><CourseDetailDashboard /></CourseDashboardLayout> : <Navigate to="/login" replace />} />
 
       {/* Route mới thêm cho trang chi tiết khóa học, có bọc Layout */}
-      <Route 
-        path="/creator/courses/:id" 
+      <Route
+        path="/creator/courses/:id"
         element={
           <CourseDashboardLayout>
             <CourseDetailDashboard />
           </CourseDashboardLayout>
-        } 
+        }
       />
-      
+
       {/* Đổi luôn chỗ này: Bấm bậy bạ thì tự động về Dashboard để rảnh tay test UI, không bị sút ra Login nữa */}
       <Route path="*" element={<Navigate to="/creator/dashboard" replace />} />
     </Routes>
