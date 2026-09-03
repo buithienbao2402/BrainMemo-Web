@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import classes from './AuthLayout.module.css';
 // Import file ảnh logo từ thư mục assets
 import logoImg from '../../assets/brainmemo-logo-black.png';
+// Import component não bộ tương tác
+import { InteractiveBrain } from '../../features/auth/components/InteractiveBrain';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -17,10 +19,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div className={classes.card}>
         <div className={classes.leftPanel}>
           <div className={classes.logo}>
-            
             {/* Đã thay placeholder bằng thẻ img */}
             <img src={logoImg} alt="BrainMemo Logo" className={classes.logoImage} />
-            
+          </div>
+
+          {/* VÙNG AN TOÀN (.stage): Chứa toàn bộ hiệu ứng, tự động tránh logo và tagline */}
+          <div className={classes.stage}>
+            <InteractiveBrain />
           </div>
 
           <div className={classes.leftContent}>
