@@ -1,10 +1,9 @@
-﻿// WebHoTroHocTap.Business/Services/IAuthService.cs
-using WebHoTroHocTap.DataAccess.Entities;
+﻿using WebHoTroHocTap.Business.DTOs;
 
-namespace WebHoTroHocTap.Business.Services
+namespace WebHoTroHocTap.Business.Services;
+
+public interface IAuthService
 {
-    public interface IAuthService
-    {
-        Task<(string AccessToken, string RefreshToken, User User)> LoginAsync(string email, string password, string jwtKey, string issuer, string audience);
-    }
+    // Đổi Task<string?> thành Task<LoginResponseDto?>
+    Task<LoginResponseDto?> LoginAsync(string email, string password);
 }
