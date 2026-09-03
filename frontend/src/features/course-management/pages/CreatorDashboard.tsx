@@ -1,4 +1,4 @@
-import { Stack, SimpleGrid, Card, Group, Text, Badge, ThemeIcon, Skeleton } from '@mantine/core';
+import { Stack, SimpleGrid, Card, Group, Text, Badge, ThemeIcon, Skeleton, Image } from '@mantine/core';
 import {
   IconBook2,
   IconUsers,
@@ -16,6 +16,7 @@ import { useMyCourses } from '../hooks/useCourseManagement';
 import { CreateCourseModal } from '../components/CreateCourseModal';
 import type { Course, CourseStatus } from '../types/course-management.types';
 import { useNavigate } from 'react-router-dom';
+import PenLogo from "../../../assets/Pen.png";
 
 // Mock: chưa có endpoint stats tổng học viên toàn nền tảng, hardcode tạm theo thiết kế.
 const MOCK_TOTAL_PARTICIPANTS = 4321;
@@ -74,11 +75,22 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
 
   return (
-    <CourseDashboardLayout>
-      <Stack gap="xl" maw={960} mx="auto">
+  <CourseDashboardLayout>
+    <Stack gap="xl" maw={960} mx="auto">
+
+      <Group gap="sm">
+        <Image
+          src={PenLogo}
+          alt="Pen logo"
+          w={25}
+          h={25}
+          fit="contain"
+        />
+
         <Text fz={22} fw={700}>
-          🚀 Creator Dashboard
+          Creator Dashboard
         </Text>
+      </Group>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Card radius="md" padding="lg" withBorder>

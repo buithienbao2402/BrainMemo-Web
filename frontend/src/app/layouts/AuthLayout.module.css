@@ -26,6 +26,8 @@
   padding: 2.5rem;
   color: #fff;
   background: linear-gradient(135deg, #ff9a44 0%, #ff7a18 45%, #e85d04 100%);
+  position: relative; /* Bắt buộc có ở đây để làm mốc cho .stage trên desktop */
+  overflow: hidden;   /* Cắt gọn hiệu ứng không cho tràn viền */
 }
 
 .logo {
@@ -88,4 +90,12 @@
   .leftContent {
     max-width: none;
   }
+}
+
+.stage {
+  position: absolute;
+  top: 105px;
+  bottom: 205px;
+  left: 0;
+  right: 0;
 }

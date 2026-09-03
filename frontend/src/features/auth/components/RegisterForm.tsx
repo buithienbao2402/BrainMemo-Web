@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TextInput, PasswordInput, Button, Alert, Anchor, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconUser, IconMail, IconLock, IconAlertCircle } from '@tabler/icons-react';
@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import type { ApiResponse } from '@/shared/types/api.types';
 import { useRequestRegisterOtp } from '../hooks/useAuth';
+import { useAuthVisualStore } from '../store/authVisualStore';
 import type { RegisterRequestOtpPayload } from '../types/auth.types';
 import classes from './AuthForm.module.css';
 
@@ -35,6 +36,22 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         value !== values.password ? 'Mật khẩu xác nhận không khớp' : null,
     },
   });
+
+  const setEmailFilled = useAuthVisualStore((s) => s.setEmailFilled);
+  const setPasswordStrength = useAuthVisualStore((s) => s.setPasswordStrength);
+  const resetVisual = useAuthVisualStore((s) => s.reset);
+
+  // Báo trạng thái gõ email/password sang InteractiveBrain (panel trái) - không
+  // ảnh hưởng validate/submit hiện có.
+  useEffect(() => {
+    setEmailFilled(/^\S+@\S+\.\S+$/.test(form.values.email));
+    setPasswordStrength(
+      form.values.password.length === 0 ? 0 : form.values.password.length > 6 ? 2 : 1
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values.email, form.values.password]);
+
+  useEffect(() => resetVisual, [resetVisual]);
 
   const handleSubmit = form.onSubmit((values) => {
     setServerError(null);
