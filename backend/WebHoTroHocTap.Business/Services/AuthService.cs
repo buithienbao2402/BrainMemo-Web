@@ -16,21 +16,21 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
-    private readonly IMemoryCache _cache; // Thêm IMemoryCache
+    private readonly IMemoryCache _cache;
+    private readonly IEmailService _emailService;
 
-    // Tiêm IMemoryCache vào Constructor
-    public AuthService(AppDbContext context, IConfiguration configuration, IMemoryCache cache)
+    public AuthService(AppDbContext context, IConfiguration configuration, IMemoryCache cache, IEmailService emailService)
     {
         _context = context;
         _configuration = configuration;
         _cache = cache;
+        _emailService = emailService;
     }
 
     public async Task<LoginResponseDto?> LoginAsync(string email, string password)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        // Kiểm tra mật khẩu bằng BCrypt (Khớp với lúc băm ở hàm đăng ký)
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
             return null;
@@ -84,7 +84,7 @@ public class AuthService : IAuthService
     }
 
     // ==========================================
-    // LUỒNG ĐĂNG KÝ MỚI (REQUEST OTP & VERIFY OTP)
+    // LUỒNG ĐĂNG KÝ (REQUEST OTP & VERIFY OTP)[cite: 1]
     // ==========================================
 
     public async Task<(bool IsSuccess, string ErrorMessage)> RequestOtpAsync(string email, string password, string fullName)
@@ -99,12 +99,15 @@ public class AuthService : IAuthService
         // 2. Sinh OTP ngẫu nhiên 6 số
         string otp = new Random().Next(100000, 999999).ToString();
 
-        // 3. Lưu thông tin tạm vào Cache trong 5 phút (Dùng Tuple để code an toàn về kiểu dữ liệu)
+        // 3. Lưu thông tin tạm vào Cache trong 5 phút
         var cacheData = (Email: email, Password: password, FullName: fullName, Otp: otp);
         _cache.Set($"RegisterOTP_{email}", cacheData, TimeSpan.FromMinutes(5));
 
-        // MVP: In ra console để test (Sau này gắn SendGrid/SMTP vào đây)
-        Console.WriteLine($"\n[Email Service] Gửi OTP {otp} tới email {email}\n");
+        // 4. Gửi email thực tế qua IEmailService
+        string subject = "Mã OTP xác thực tài khoản WebHoTroHocTap";
+        string body = $"<h3>Mã OTP của bạn là: <b style='color:blue;'>{otp}</b></h3><p>Mã này có hiệu lực trong vòng 5 phút.</p>";
+
+        await _emailService.SendEmailAsync(email, subject, body);
 
         return (true, string.Empty);
     }
@@ -122,7 +125,7 @@ public class AuthService : IAuthService
             return (false, "Mã OTP không chính xác.");
         }
 
-        // 2. Băm mật khẩu (Hash password) bằng BCrypt[cite: 1]
+        // 2. Băm mật khẩu bằng BCrypt[cite: 1]
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(cachedData.Password);
 
         // 3. Tạo User mới lưu vào Database[cite: 1, 2]
@@ -136,7 +139,7 @@ public class AuthService : IAuthService
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync();
 
-        // 4. Xóa cache sau khi tạo thành công để tránh đăng ký đúp
+        // 4. Xóa cache sau khi tạo thành công
         _cache.Remove($"RegisterOTP_{email}");
 
         return (true, string.Empty);
