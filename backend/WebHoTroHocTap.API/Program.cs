@@ -47,6 +47,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 var app = builder.Build();
 
 // 5. Cấu hình HTTP Request Pipeline (Middleware)
