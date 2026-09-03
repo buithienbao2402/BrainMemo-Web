@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.Business.Services;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 4. Các dịch vụ mặc định của Web API
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Dán access token vào đây (không cần gõ chữ 'Bearer ' phía trước, Swagger tự thêm)"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -48,6 +75,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+
+builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // 5. Cấu hình HTTP Request Pipeline (Middleware)

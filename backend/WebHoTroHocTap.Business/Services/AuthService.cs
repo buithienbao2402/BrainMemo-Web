@@ -83,6 +83,44 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task<string?> RefreshTokenAsync(string rawRefreshToken)
+    {
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken)));
+
+        var storedToken = await _context.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash);
+
+        // Không tồn tại, đã bị thu hồi, hoặc hết hạn -> từ chối
+        if (storedToken == null || storedToken.RevokedAt != null || storedToken.ExpiresAt < DateTime.UtcNow)
+        {
+            return null;
+        }
+
+        var user = storedToken.User;
+        var jwtKey = _configuration["Jwt:Key"] ?? "WebHoTroHocTap_Secret_Key_For_JWT_Authentication_2026";
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+
+        var claims = new List<Claim>
+    {
+        new Claim("userId", user.UserId.ToString()),
+        new Claim("email", user.Email)
+    };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(30),
+            SigningCredentials = creds,
+            Issuer = _configuration["Jwt:Issuer"],
+            Audience = _configuration["Jwt:Audience"],
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+    }
+
     // ==========================================
     // LUỒNG ĐĂNG KÝ (REQUEST OTP & VERIFY OTP)[cite: 1]
     // ==========================================

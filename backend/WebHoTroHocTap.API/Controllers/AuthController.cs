@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
             {
                 HttpOnly = true,
                 Secure = true, // Yêu cầu HTTPS
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(30)
             };
             Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
@@ -74,6 +74,30 @@ public class AuthController : ControllerBase
                 Message = ex.Message
             });
         }
+    }
+
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken()
+    {
+        var rawToken = Request.Cookies["refreshToken"];
+        if (string.IsNullOrEmpty(rawToken))
+        {
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không tìm thấy refresh token." });
+        }
+
+        var newAccessToken = await _authService.RefreshTokenAsync(rawToken);
+        if (newAccessToken == null)
+        {
+            Response.Cookies.Delete("refreshToken");
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Phiên đăng nhập đã hết hạn." });
+        }
+
+        return Ok(new ApiResponse<object>
+        {
+            Success = true,
+            Message = "Làm mới token thành công",
+            Data = new { accessToken = newAccessToken }
+        });
     }
 
     [HttpPost("register/request-otp")]

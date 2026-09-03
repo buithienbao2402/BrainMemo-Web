@@ -17,6 +17,7 @@ import {
   Paper,
   Image,
   Badge,
+  Popover,
   rem,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -27,6 +28,7 @@ import {
   IconKey,
   IconRefresh,
   IconCalendar,
+  IconTrash,
 } from '@tabler/icons-react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
@@ -43,9 +45,25 @@ interface CreateCourseFormValues {
   status: CourseStatus;
 }
 
+/** Dữ liệu khóa học đã tồn tại — truyền vào để bật chế độ Chỉnh sửa. */
+export interface CourseRecord {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl?: string | null;
+  tags: string[];
+  accessType: AccessType;
+  status: CourseStatus;
+  createdAt: string; // ISO date string
+}
+
 interface CreateCourseModalProps {
   opened: boolean;
   onClose: () => void;
+  /** Có giá trị => modal ở chế độ Chỉnh sửa; để trống/undefined => chế độ Tạo mới. */
+  course?: CourseRecord | null;
+  /** Gọi sau khi xóa khóa học thành công (vd. để dashboard điều hướng ra ngoài, refetch danh sách...). */
+  onDeleted?: (courseId: string) => void;
 }
 
 const STATUS_OPTIONS: { value: CourseStatus; label: string }[] = [
@@ -67,10 +85,17 @@ function generatePasscode(length = 8) {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
+function revokeIfBlobUrl(url: string | null) {
+  if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+}
+
+export function CreateCourseModal({ opened, onClose, course, onDeleted }: CreateCourseModalProps) {
   const user = useAuthStore((s) => s.user);
+  const isEditMode = Boolean(course);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,14 +112,42 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
     },
     validate: {
       title: (value) => (value.trim().length === 0 ? 'Tên khóa học không được để trống' : null),
-      passcode: (value, values) =>
-        values.accessType === 'PROTECTED' && value.trim().length < 4
-          ? 'Bắt buộc nhập khi chọn Protected (tối thiểu 4 ký tự)'
-          : null,
+      passcode: (value, values) => {
+        if (values.accessType !== 'PROTECTED') return null;
+        const trimmed = value.trim();
+        // Chế độ sửa: BE không trả lại passcode cũ vì lý do bảo mật — để trống nghĩa là giữ nguyên,
+        // chỉ bắt buộc nhập đủ độ dài nếu người dùng có gõ gì đó.
+        if (isEditMode) {
+          return trimmed.length > 0 && trimmed.length < 4 ? 'Mã tối thiểu 4 ký tự' : null;
+        }
+        return trimmed.length < 4 ? 'Bắt buộc nhập khi chọn Protected (tối thiểu 4 ký tự)' : null;
+      },
     },
   });
 
-  // Clear passcode whenever access type leaves PROTECTED
+  // Nạp dữ liệu khóa học khi mở modal ở chế độ Chỉnh sửa; reset khi mở ở chế độ Tạo mới.
+  useEffect(() => {
+    if (!opened) return;
+    if (course) {
+      form.setValues({
+        title: course.title,
+        description: course.description,
+        coverImageObjectKey: '',
+        tags: course.tags,
+        accessType: course.accessType,
+        passcode: '',
+        status: course.status,
+      });
+      setCoverPreview(course.coverImageUrl ?? null);
+    } else {
+      form.reset();
+      setCoverPreview(null);
+    }
+    setDeleteConfirmOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, course?.id]);
+
+  // Xóa passcode khi rời PROTECTED
   useEffect(() => {
     if (form.values.accessType !== 'PROTECTED' && form.values.passcode) {
       form.setFieldValue('passcode', '');
@@ -107,7 +160,7 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
   const applyCoverFile = (file: File | null) => {
     if (!file) return;
     setCoverPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
+      revokeIfBlobUrl(prev);
       return URL.createObjectURL(file);
     });
     // TODO: wire to features/media-upload -> POST /api/media/presigned-url -> PUT to MinIO,
@@ -117,7 +170,7 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
 
   const clearCover = () => {
     setCoverPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
+      revokeIfBlobUrl(prev);
       return null;
     });
     form.setFieldValue('coverImageObjectKey', '');
@@ -135,16 +188,19 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
   };
 
   const handleClose = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isDeleting) return;
     form.reset();
     clearCover();
+    setDeleteConfirmOpen(false);
     onClose();
   };
 
   const handleSubmit = form.onSubmit((values) => {
     setIsSubmitting(true);
-    // TODO: replace with useMutation (react-query) calling POST /api/courses via the shared axios instance
-    const payload = { ...values }; // payload sẵn sàng để gửi lên API thật
+    // TODO: thay bằng useMutation (react-query):
+    //  - Tạo mới: POST /api/courses
+    //  - Chỉnh sửa: PUT /api/courses/{course.id}
+    const payload = isEditMode ? { id: course!.id, ...values } : values;
     void new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
       console.log('Submitting course payload:', payload);
       setIsSubmitting(false);
@@ -154,8 +210,31 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
     });
   });
 
+  const handleDelete = () => {
+    if (!course) return;
+    setIsDeleting(true);
+    // TODO: thay bằng useMutation (react-query) gọi DELETE /api/courses/{course.id}
+    void new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
+      console.log('Deleting course:', course.id);
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      onDeleted?.(course.id);
+      onClose();
+    });
+  };
+
+  const createdAtLabel = course
+    ? new Date(course.createdAt).toLocaleDateString('vi-VN')
+    : new Date().toLocaleDateString('vi-VN');
+
   return (
-    <Modal opened={opened} onClose={handleClose} title="Tạo khóa học mới" size="lg" centered>
+    <Modal
+      opened={opened}
+      onClose={handleClose}
+      title={isEditMode ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới'}
+      size="lg"
+      centered
+    >
       {/* noValidate: tránh browser chặn submit bằng popup HTML5 mặc định, để lỗi hiển thị đúng theo Mantine */}
       <form onSubmit={handleSubmit} noValidate>
         <Stack gap="md">
@@ -327,8 +406,8 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
               <Group gap="xs" align="flex-end">
                 <PasswordInput
                   label="Mật mã truy cập (Access Code)"
-                  placeholder="Nhập mã bảo vệ"
-                  required
+                  placeholder={isEditMode ? 'Để trống nếu giữ nguyên mã hiện tại' : 'Nhập mã bảo vệ'}
+                  required={!isEditMode}
                   style={{ flex: 1 }}
                   {...form.getInputProps('passcode')}
                 />
@@ -340,6 +419,11 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
                   Tạo mã ngẫu nhiên
                 </Button>
               </Group>
+              {isEditMode && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Hệ thống không lưu lại mã cũ — để trống nếu bạn không muốn đổi mã truy cập.
+                </Text>
+              )}
             </Box>
           )}
 
@@ -347,7 +431,7 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
           <SimpleGrid cols={2} spacing="sm">
             <TextInput
               label="Ngày tạo"
-              value={new Date().toLocaleDateString('vi-VN')}
+              value={createdAtLabel}
               leftSection={<IconCalendar size={16} />}
               description="Không sửa được"
               disabled
@@ -361,13 +445,53 @@ export function CreateCourseModal({ opened, onClose }: CreateCourseModalProps) {
           </SimpleGrid>
 
           {/* Footer */}
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={handleClose} disabled={isSubmitting}>
-              Hủy
-            </Button>
-            <Button type="submit" color="orange" loading={isSubmitting}>
-              Tạo khóa học
-            </Button>
+          <Group justify="space-between" mt="md">
+            {isEditMode ? (
+              <Popover
+                opened={deleteConfirmOpen}
+                onChange={setDeleteConfirmOpen}
+                position="top-start"
+                withArrow
+                shadow="md"
+              >
+                <Popover.Target>
+                  <Button
+                    variant="outline"
+                    color="red"
+                    leftSection={<IconTrash size={16} />}
+                    onClick={() => setDeleteConfirmOpen((o) => !o)}
+                    disabled={isSubmitting || isDeleting}
+                  >
+                    Xóa khóa học
+                  </Button>
+                </Popover.Target>
+                <Popover.Dropdown maw={260}>
+                  <Text size="sm" mb={10}>
+                    Xóa khóa học này? Toàn bộ chương, trang, học viên và bình luận liên quan sẽ mất vĩnh viễn,
+                    không thể khôi phục.
+                  </Text>
+                  <Group gap="xs" justify="flex-end">
+                    <Button size="xs" variant="default" onClick={() => setDeleteConfirmOpen(false)}>
+                      Hủy
+                    </Button>
+                    <Button size="xs" color="red" loading={isDeleting} onClick={handleDelete}>
+                      Xóa vĩnh viễn
+                    </Button>
+                  </Group>
+                </Popover.Dropdown>
+              </Popover>
+            ) : (
+              <span />
+            )}
+
+            <Group>
+              <Button variant="default" onClick={handleClose} disabled={isSubmitting || isDeleting}>
+                Hủy
+              </Button>
+              <Button type="submit" color="orange" loading={isSubmitting} disabled={isDeleting}>
+                {isEditMode ? 'Lưu thay đổi' : 'Tạo khóa học'}
+              </Button>
+            </Group>
           </Group>
         </Stack>
       </form>
