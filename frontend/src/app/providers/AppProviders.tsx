@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { theme } from './theme';
 import { ErrorBoundary } from './ErrorBoundary';
+import { AuthProvider } from './AuthProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,7 +25,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <MantineProvider theme={theme}>
-          <BrowserRouter>{children}</BrowserRouter>
+          <Notifications position="top-right" />
+          <AuthProvider>
+            <BrowserRouter>{children}</BrowserRouter>
+          </AuthProvider>
         </MantineProvider>
       </QueryClientProvider>
     </ErrorBoundary>

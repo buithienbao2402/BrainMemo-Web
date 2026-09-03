@@ -1,0 +1,79 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f7;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  height: 60px;
+  background-color: #0f0f10;
+}
+
+.headerLogo {
+  height: 88px;
+  width: auto;
+}
+
+.buttonIcon {
+  height: 16px;
+  width: 16px;
+  object-fit: contain;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem 1.75rem;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Sửa ở đây: Đưa padding trên/dưới về 0, chỉ giữ lại trái/phải */
+  padding: 0 1.75rem; 
+  height: 100px; /* Chốt cứng chiều cao (ông có thể tùy chỉnh số này) */
+  background-color: #eef0f2;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footerLogo {
+  height: 88px;
+  width: auto;
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  display: inline-block;
+}
+
+@media (max-width: 640px) {
+  .header,
+  .footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .footerLeft span:nth-child(3) {
+    display: none;
+  }
+}
