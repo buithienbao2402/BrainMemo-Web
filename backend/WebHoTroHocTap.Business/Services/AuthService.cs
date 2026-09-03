@@ -1,11 +1,13 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using WebHoTroHocTap.Business.DTOs;
 using WebHoTroHocTap.DataAccess;
+using WebHoTroHocTap.DataAccess.Entities;
 
 namespace WebHoTroHocTap.Business.Services;
 
@@ -44,18 +46,31 @@ public class AuthService : IAuthService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(2),
-            SigningCredentials = creds
+            Expires = DateTime.UtcNow.AddMinutes(30), // contract quy định 30 phút, không phải 2 giờ
+            SigningCredentials = creds,
+            Issuer = _configuration["Jwt:Issuer"],
+            Audience = _configuration["Jwt:Audience"],
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
         string tokenString = tokenHandler.WriteToken(token);
 
+        var rawRefreshToken = Guid.NewGuid().ToString();
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken)));
+
+        _context.RefreshTokens.Add(new RefreshToken
+        {
+            UserId = user.UserId,
+            TokenHash = tokenHash,
+            ExpiresAt = DateTime.UtcNow.AddDays(30)
+        });
+        await _context.SaveChangesAsync();
+
         return new LoginResponseDto
         {
             AccessToken = tokenString,
-            RefreshToken = Guid.NewGuid().ToString(),
+            RefreshToken = rawRefreshToken,
             User = new UserDto
             {
                 UserId = user.UserId,

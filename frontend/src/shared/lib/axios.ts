@@ -32,13 +32,29 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+/**
+ * Các endpoint auth tự nó trả 401 vì lý do nghiệp vụ (sai mật khẩu, chưa
+ * có refresh token hợp lệ...) — KHÔNG phải vì access token hết hạn.
+ * Nếu để interceptor cố refresh cho những endpoint này, 401 của chính
+ * request login sẽ bị hiểu nhầm thành "hết phiên", gây gọi refresh-token
+ * thừa và có thể phá luồng hiển thị lỗi phía component.
+ */
+const AUTH_ENDPOINTS_TO_SKIP = ['/auth/login', '/auth/register', '/auth/refresh-token'];
+
+const shouldSkipRefresh = (url?: string) =>
+  !url || AUTH_ENDPOINTS_TO_SKIP.some((path) => url.includes(path));
+
 // Response interceptor xử lý 401
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !shouldSkipRefresh(originalRequest.url)
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -63,7 +79,7 @@ apiClient.interceptors.response.use(
 
         const newToken = refreshRes.data.data.accessToken;
         const currentUser = useAuthStore.getState().user;
-        
+
         // Nếu app đã boot xong và đang có user, chỉ cần update token
         if (currentUser) {
           useAuthStore.getState().setAuth(newToken, currentUser);
@@ -74,8 +90,10 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        // Hết token thật sự -> chỉ dọn state, KHÔNG ép reload cả trang.
+        // Route được bảo vệ (xem router.tsx) sẽ tự đá về /login vì
+        // accessToken đã về null, giữ nguyên trải nghiệm SPA.
         useAuthStore.getState().clearAuth();
-        window.location.href = '/login'; // Hết token thật sự -> về Login
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -32,6 +32,14 @@ public class AuthController : ControllerBase
             var result = await _authService.LoginAsync(
                 request.Email,
                 request.Password );
+            if (result == null)
+            {
+                return Unauthorized(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Email hoặc mật khẩu không đúng"
+                });
+            }
 
             // Gửi ngầm Refresh Token qua HttpOnly Cookie với thời hạn 30 ngày
             var cookieOptions = new CookieOptions

@@ -16,7 +16,7 @@ interface LoginFormValues {
 
 export function LoginForm() {
   const { mutate, isPending } = useLogin();
-  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -32,8 +32,8 @@ export function LoginForm() {
     setServerError(null);
     mutate(values, {
       onSuccess: (res) => {
-        if (res.data?.accessToken) setAccessToken(res.data.accessToken);
-        navigate('/'); // TODO: đổi thành route dashboard thật khi có
+        if (res.data?.accessToken) setAuth(res.data.accessToken, res.data.user);
+        navigate('/creator/dashboard');
       },
       onError: (err) => {
         const axiosErr = err as AxiosError<ApiResponse<null>>;

@@ -35,6 +35,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // đổi đúng URL Vite dev của bạn
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // bắt buộc, vì FE gửi cookie kèm request
+    });
+});
+
 var app = builder.Build();
 
 // 5. Cấu hình HTTP Request Pipeline (Middleware)
@@ -45,6 +56,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 // QUAN TRỌNG: UseAuthentication phải nằm TRƯỚC UseAuthorization
 app.UseAuthentication();
