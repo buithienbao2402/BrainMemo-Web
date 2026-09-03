@@ -4,6 +4,8 @@ namespace WebHoTroHocTap.Business.Services;
 
 public interface IAuthService
 {
-    // Đổi Task<string?> thành Task<LoginResponseDto?>
     Task<LoginResponseDto?> LoginAsync(string email, string password);
+
+    Task<(bool IsSuccess, string ErrorMessage)> RequestOtpAsync(string email, string password, string fullName);
+    Task<(bool IsSuccess, string ErrorMessage)> VerifyOtpAsync(string email, string otp);
 }
