@@ -24,14 +24,11 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // Truyền các cấu hình JWT từ appsettings.json xuống Business
-            var jwtKey = _config["Jwt:Key"]!;
-            var issuer = _config["Jwt:Issuer"]!;
-            var audience = _config["Jwt:Audience"]!;
-
             var result = await _authService.LoginAsync(
                 request.Email,
-                request.Password );
+                request.Password
+            );
+
             if (result == null)
             {
                 return Unauthorized(new ApiResponse<object>
@@ -41,7 +38,7 @@ public class AuthController : ControllerBase
                 });
             }
 
-            // Gửi ngầm Refresh Token qua HttpOnly Cookie với thời hạn 30 ngày
+            // Gửi ngầm Refresh Token qua HttpOnly Cookie với thời hạn 30 ngày[cite: 1]
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -71,6 +68,70 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             // Bắt lỗi từ tầng Business (Sai mật khẩu, tài khoản không tồn tại...)
+            return BadRequest(new ApiResponse<object>
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+    }
+
+    [HttpPost("register/request-otp")]
+    public async Task<IActionResult> RequestOtp([FromBody] RequestOtpDto request)
+    {
+        try
+        {
+            var (isSuccess, errorMessage) = await _authService.RequestOtpAsync(request.Email, request.Password, request.FullName);
+
+            if (!isSuccess)
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = errorMessage
+                });
+            }
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Mã OTP đã được gửi tới email của bạn."
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Success = false,
+                Message = ex.Message
+            });
+        }
+    }
+
+    [HttpPost("register/verify")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto request)
+    {
+        try
+        {
+            var (isSuccess, errorMessage) = await _authService.VerifyOtpAsync(request.Email, request.Otp);
+
+            if (!isSuccess)
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = errorMessage
+                });
+            }
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Đăng ký tài khoản thành công."
+            });
+        }
+        catch (Exception ex)
+        {
             return BadRequest(new ApiResponse<object>
             {
                 Success = false,

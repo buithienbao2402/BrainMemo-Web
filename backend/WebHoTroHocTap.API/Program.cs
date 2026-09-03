@@ -45,7 +45,8 @@ builder.Services.AddCors(options =>
               .AllowCredentials(); // bắt buộc, vì FE gửi cookie kèm request
     });
 });
-
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IEmailService, EmailService>();
 var app = builder.Build();
 
 // 5. Cấu hình HTTP Request Pipeline (Middleware)
