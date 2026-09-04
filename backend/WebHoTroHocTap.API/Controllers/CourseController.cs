@@ -26,7 +26,7 @@ public class CourseController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        int? userId = User.FindFirst("userId") != null ? int.Parse(User.FindFirst("userId")!.Value) : null;
+        int? userId = GetCurrentUserId();
         var result = await _courseService.GetCoursesAsync(scope, search, tag, sort, page, pageSize, userId);
         return Ok(new ApiResponse<object> { Success = true, Message = "Lấy danh sách khóa học thành công", Data = result });
     }
@@ -36,7 +36,7 @@ public class CourseController : ControllerBase
     {
         try
         {
-            int? userId = User.FindFirst("userId") != null ? int.Parse(User.FindFirst("userId")!.Value) : null;
+            int? userId = GetCurrentUserId();
             var result = await _courseService.GetCourseByIdAsync(id, userId, passcode);
             if (result == null)
             {
@@ -46,12 +46,12 @@ public class CourseController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            if (ex.Message == "PASSCODE_REQUIRED_OR_INVALID")
+            if (ex.Message == "PASSCODE_INVALID")
             {
                 return StatusCode(403, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Thiếu hoặc sai Passcode bảo vệ khóa học"
+                    Message = "Sai hoặc thiếu passcode truy cập nội dung bảo vệ"
                 });
             }
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
@@ -64,7 +64,7 @@ public class CourseController : ControllerBase
     {
         try
         {
-            int userId = int.Parse(User.FindFirst("userId")!.Value);
+            int userId = GetCurrentUserId()!.Value;
             int courseId = await _courseService.CreateCourseAsync(
                 userId,
                 dto.Title,
@@ -81,5 +81,65 @@ public class CourseController : ControllerBase
         {
             return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+    }
+
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateCourse(int id, [FromBody] CourseRequestDto dto)
+    {
+        try
+        {
+            int userId = GetCurrentUserId()!.Value;
+            bool success = await _courseService.UpdateCourseAsync(
+                id,
+                userId,
+                dto.Title,
+                dto.Description,
+                dto.CoverImageObjectKey,
+                dto.AccessType,
+                dto.Passcode,
+                dto.Tags
+            );
+
+            if (!success) return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy khóa học" });
+
+            return Ok(new ApiResponse<object> { Success = true, Message = "Cập nhật khóa học thành công" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        try
+        {
+            int userId = GetCurrentUserId()!.Value;
+            bool success = await _courseService.DeleteCourseAsync(id, userId);
+            if (!success) return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy khóa học" });
+
+            return Ok(new ApiResponse<object> { Success = true, Message = "Xóa khóa học thành công" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var claim = User.FindFirst("userId");
+        return claim != null ? int.Parse(claim.Value) : null;
     }
 }
