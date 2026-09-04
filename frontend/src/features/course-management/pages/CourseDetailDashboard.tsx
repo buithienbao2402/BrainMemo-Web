@@ -8,6 +8,7 @@ import {
 import { CourseOverviewTab } from '../components/CourseOverviewTab';
 import { useUIStore } from '@/stores/uiStore';
 import { CreateCourseModal } from '../components/CreateCourseModal';
+import { ChapterList } from '../components/ChapterList';
 
 /**
  * Trang "Quản lý chi tiết khóa học" (Creator).
@@ -56,9 +57,7 @@ export function CourseDetailDashboard() {
         </Tabs.Panel>
 
         <Tabs.Panel value="chapters" pt="lg">
-          <Text c="dimmed" size="sm">
-            Danh sách chương — nằm ngoài phạm vi nhiệm vụ hiện tại.
-          </Text>
+          <ChapterList />
         </Tabs.Panel>
 
         <Tabs.Panel value="new-chapter" pt="lg">
