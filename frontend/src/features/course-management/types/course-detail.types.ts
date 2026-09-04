@@ -45,3 +45,13 @@ export interface CourseInvitation {
   createdAt: string; // ISO datetime string
   respondedAt: string | null;
 }
+
+export type AccessType = 'PUBLIC' | 'PRIVATE' | 'PROTECTED';
+
+export interface Chapter {
+  id: number;
+  title: string;
+  orderIndex: number;
+  accessType: AccessType;
+  createdAt: string;
+}
