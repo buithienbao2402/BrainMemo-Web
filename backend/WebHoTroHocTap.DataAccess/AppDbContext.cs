@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Scaffolding.Internal;
 using WebHoTroHocTap.DataAccess.Entities;
 
 namespace WebHoTroHocTap.DataAccess;
@@ -18,39 +17,23 @@ public partial class AppDbContext : DbContext
     }
 
     public virtual DbSet<Block> Blocks { get; set; }
-
     public virtual DbSet<Chapter> Chapters { get; set; }
-
     public virtual DbSet<Comment> Comments { get; set; }
-
     public virtual DbSet<Course> Courses { get; set; }
-
     public virtual DbSet<CourseInvitation> CourseInvitations { get; set; }
-
     public virtual DbSet<Enrollment> Enrollments { get; set; }
-
     public virtual DbSet<Flashcard> Flashcards { get; set; }
-
     public virtual DbSet<FlashcardSet> FlashcardSets { get; set; }
-
     public virtual DbSet<Notification> Notifications { get; set; }
-
     public virtual DbSet<Page> Pages { get; set; }
-
     public virtual DbSet<PageProgress> PageProgresses { get; set; }
-
     public virtual DbSet<Quiz> Quizzes { get; set; }
-
     public virtual DbSet<QuizOption> QuizOptions { get; set; }
-
     public virtual DbSet<QuizQuestion> QuizQuestions { get; set; }
-
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
-
     public virtual DbSet<Tag> Tags { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
-
+    public virtual DbSet<CourseTag> CourseTags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,13 +44,9 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Block>(entity =>
         {
             entity.HasKey(e => e.BlockId).HasName("PRIMARY");
-
             entity.ToTable("block");
-
             entity.HasIndex(e => e.PageId, "idx_block_page");
-
             entity.HasIndex(e => e.BlockType, "idx_block_type");
-
             entity.Property(e => e.BlockId).HasColumnName("block_id");
             entity.Property(e => e.BlockType)
                 .HasColumnType("enum('TEXT','IMAGE','AUDIO','VIDEO','QUIZ','FLASHCARD')")
@@ -89,11 +68,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Chapter>(entity =>
         {
             entity.HasKey(e => e.ChapterId).HasName("PRIMARY");
-
             entity.ToTable("chapter");
-
             entity.HasIndex(e => e.CourseId, "idx_chapter_course");
-
             entity.Property(e => e.ChapterId).HasColumnName("chapter_id");
             entity.Property(e => e.AccessType)
                 .HasDefaultValueSql("'PUBLIC'")
@@ -120,13 +96,9 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.HasKey(e => e.CommentId).HasName("PRIMARY");
-
             entity.ToTable("comment");
-
             entity.HasIndex(e => e.CourseId, "idx_comment_course");
-
             entity.HasIndex(e => e.UserId, "idx_comment_user");
-
             entity.Property(e => e.CommentId).HasColumnName("comment_id");
             entity.Property(e => e.Content)
                 .HasColumnType("text")
@@ -150,15 +122,10 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Course>(entity =>
         {
             entity.HasKey(e => e.CourseId).HasName("PRIMARY");
-
             entity.ToTable("course");
-
             entity.HasIndex(e => e.AccessType, "idx_course_access_type");
-
             entity.HasIndex(e => e.CreatorId, "idx_course_creator");
-
             entity.HasIndex(e => e.Status, "idx_course_status");
-
             entity.Property(e => e.CourseId).HasColumnName("course_id");
             entity.Property(e => e.AccessType)
                 .HasDefaultValueSql("'PUBLIC'")
@@ -194,44 +161,37 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.Creator).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CreatorId)
                 .HasConstraintName("fk_course_creator");
+        });
 
-            entity.HasMany(d => d.Tags).WithMany(p => p.Courses)
-                .UsingEntity<Dictionary<string, object>>(
-                    "CourseTag",
-                    r => r.HasOne<Tag>().WithMany()
-                        .HasForeignKey("TagId")
-                        .HasConstraintName("fk_coursetag_tag"),
-                    l => l.HasOne<Course>().WithMany()
-                        .HasForeignKey("CourseId")
-                        .HasConstraintName("fk_coursetag_course"),
-                    j =>
-                    {
-                        j.HasKey("CourseId", "TagId")
-                            .HasName("PRIMARY")
-                            .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
-                        j.ToTable("course_tag");
-                        j.HasIndex(new[] { "TagId" }, "fk_coursetag_tag");
-                        j.IndexerProperty<int>("CourseId").HasColumnName("course_id");
-                        j.IndexerProperty<int>("TagId").HasColumnName("tag_id");
-                    });
+        // Bảng trung gian CourseTag đã tách thành Entity độc lập
+        modelBuilder.Entity<CourseTag>(entity =>
+        {
+            entity.ToTable("course_tag");
+            entity.HasKey(ct => new { ct.CourseId, ct.TagId });
+
+            entity.Property(ct => ct.CourseId).HasColumnName("course_id");
+            entity.Property(ct => ct.TagId).HasColumnName("tag_id");
+
+            entity.HasOne(ct => ct.Course)
+                  .WithMany(c => c.CourseTags)
+                  .HasForeignKey(ct => ct.CourseId)
+                  .HasConstraintName("fk_coursetag_course");
+
+            entity.HasOne(ct => ct.Tag)
+                  .WithMany(t => t.CourseTags)
+                  .HasForeignKey(ct => ct.TagId)
+                  .HasConstraintName("fk_coursetag_tag");
         });
 
         modelBuilder.Entity<CourseInvitation>(entity =>
         {
             entity.HasKey(e => e.InvitationId).HasName("PRIMARY");
-
             entity.ToTable("course_invitation");
-
             entity.HasIndex(e => e.InviteeUserId, "fk_invitation_invitee");
-
             entity.HasIndex(e => e.InviterId, "fk_invitation_inviter");
-
             entity.HasIndex(e => e.CourseId, "idx_invitation_course");
-
             entity.HasIndex(e => e.InviteeEmail, "idx_invitation_invitee_email");
-
             entity.HasIndex(e => e.Status, "idx_invitation_status");
-
             entity.Property(e => e.InvitationId).HasColumnName("invitation_id");
             entity.Property(e => e.CourseId).HasColumnName("course_id");
             entity.Property(e => e.CreatedAt)
@@ -266,17 +226,11 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Enrollment>(entity =>
         {
             entity.HasKey(e => e.EnrollmentId).HasName("PRIMARY");
-
             entity.ToTable("enrollment");
-
             entity.HasIndex(e => e.CourseId, "idx_enrollment_course");
-
             entity.HasIndex(e => e.LastPageId, "idx_enrollment_lastpage");
-
             entity.HasIndex(e => e.UserId, "idx_enrollment_user");
-
             entity.HasIndex(e => new { e.UserId, e.CourseId }, "uq_enrollment_user_course").IsUnique();
-
             entity.Property(e => e.EnrollmentId).HasColumnName("enrollment_id");
             entity.Property(e => e.CourseId).HasColumnName("course_id");
             entity.Property(e => e.EnrolledAt)
@@ -313,11 +267,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Flashcard>(entity =>
         {
             entity.HasKey(e => e.FlashcardId).HasName("PRIMARY");
-
             entity.ToTable("flashcard");
-
             entity.HasIndex(e => e.FlashcardSetId, "idx_flashcard_set");
-
             entity.Property(e => e.FlashcardId).HasColumnName("flashcard_id");
             entity.Property(e => e.BackText)
                 .HasMaxLength(500)
@@ -336,11 +287,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<FlashcardSet>(entity =>
         {
             entity.HasKey(e => e.FlashcardSetId).HasName("PRIMARY");
-
             entity.ToTable("flashcard_set");
-
             entity.HasIndex(e => e.BlockId, "uq_flashcardset_block").IsUnique();
-
             entity.Property(e => e.FlashcardSetId).HasColumnName("flashcard_set_id");
             entity.Property(e => e.BlockId).HasColumnName("block_id");
 
@@ -352,13 +300,9 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.NotificationId).HasName("PRIMARY");
-
             entity.ToTable("notification");
-
             entity.HasIndex(e => e.IsRead, "idx_notification_isread");
-
             entity.HasIndex(e => e.UserId, "idx_notification_user");
-
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
             entity.Property(e => e.Content)
                 .HasMaxLength(500)
@@ -381,11 +325,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Page>(entity =>
         {
             entity.HasKey(e => e.PageId).HasName("PRIMARY");
-
             entity.ToTable("page");
-
             entity.HasIndex(e => e.ChapterId, "idx_page_chapter");
-
             entity.Property(e => e.PageId).HasColumnName("page_id");
             entity.Property(e => e.ChapterId).HasColumnName("chapter_id");
             entity.Property(e => e.OrderIndex).HasColumnName("order_index");
@@ -401,15 +342,10 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<PageProgress>(entity =>
         {
             entity.HasKey(e => e.ProgressId).HasName("PRIMARY");
-
             entity.ToTable("page_progress");
-
             entity.HasIndex(e => e.EnrollmentId, "idx_progress_enrollment");
-
             entity.HasIndex(e => e.PageId, "idx_progress_page");
-
             entity.HasIndex(e => new { e.EnrollmentId, e.PageId }, "uq_progress_enrollment_page").IsUnique();
-
             entity.Property(e => e.ProgressId).HasColumnName("progress_id");
             entity.Property(e => e.CompletedAt)
                 .HasColumnType("datetime")
@@ -430,11 +366,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Quiz>(entity =>
         {
             entity.HasKey(e => e.QuizId).HasName("PRIMARY");
-
             entity.ToTable("quiz");
-
             entity.HasIndex(e => e.BlockId, "uq_quiz_block").IsUnique();
-
             entity.Property(e => e.QuizId).HasColumnName("quiz_id");
             entity.Property(e => e.BlockId).HasColumnName("block_id");
 
@@ -446,11 +379,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<QuizOption>(entity =>
         {
             entity.HasKey(e => e.OptionId).HasName("PRIMARY");
-
             entity.ToTable("quiz_option");
-
             entity.HasIndex(e => e.QuestionId, "idx_option_question");
-
             entity.Property(e => e.OptionId).HasColumnName("option_id");
             entity.Property(e => e.IsCorrect).HasColumnName("is_correct");
             entity.Property(e => e.OptionText)
@@ -466,11 +396,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<QuizQuestion>(entity =>
         {
             entity.HasKey(e => e.QuestionId).HasName("PRIMARY");
-
             entity.ToTable("quiz_question");
-
             entity.HasIndex(e => e.QuizId, "idx_question_quiz");
-
             entity.Property(e => e.QuestionId).HasColumnName("question_id");
             entity.Property(e => e.Explanation)
                 .HasColumnType("text")
@@ -489,15 +416,10 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.TokenId).HasName("PRIMARY");
-
             entity.ToTable("refresh_token");
-
             entity.HasIndex(e => e.ExpiresAt, "idx_refreshtoken_expiry");
-
             entity.HasIndex(e => e.UserId, "idx_refreshtoken_user");
-
             entity.HasIndex(e => e.TokenHash, "uq_refresh_token_hash").IsUnique();
-
             entity.Property(e => e.TokenId).HasColumnName("token_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -523,11 +445,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.TagId).HasName("PRIMARY");
-
             entity.ToTable("tag");
-
             entity.HasIndex(e => e.TagName, "uq_tag_name").IsUnique();
-
             entity.Property(e => e.TagId).HasColumnName("tag_id");
             entity.Property(e => e.TagName)
                 .HasMaxLength(100)
@@ -537,11 +456,8 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("PRIMARY");
-
             entity.ToTable("user");
-
             entity.HasIndex(e => e.Email, "uq_user_email").IsUnique();
-
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(500)
