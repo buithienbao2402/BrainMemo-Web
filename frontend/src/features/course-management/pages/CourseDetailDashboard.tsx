@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom';
-import { Alert, Card, Skeleton, SimpleGrid, Stack, Tabs, Text } from '@mantine/core';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Alert, Card, Skeleton, SimpleGrid, Stack, Tabs } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import {
   useCourseDashboardStats,
@@ -20,6 +20,7 @@ export function CourseDetailDashboard() {
 
   const statsQuery = useCourseDashboardStats(courseId);
   const invitationsQuery = useCourseInvitations(courseId);
+  const navigate = useNavigate();
 
   const isLoading = statsQuery.isLoading || invitationsQuery.isLoading;
   const isError = statsQuery.isError || invitationsQuery.isError;
@@ -28,7 +29,13 @@ export function CourseDetailDashboard() {
 
   return (
     <>
-      <Tabs defaultValue="overview" color="orange">
+      <Tabs defaultValue="overview" color="orange"
+      onChange={(value) => {
+          if (value === 'new-chapter') {
+            navigate(`/creator/courses/${courseId}/chapters/new`);
+          }
+        }}
+        >
         <Tabs.List>
           <Tabs.Tab value="overview">Tổng quan khóa học</Tabs.Tab>
           <Tabs.Tab value="chapters">Danh sách chương</Tabs.Tab>
@@ -58,12 +65,6 @@ export function CourseDetailDashboard() {
 
         <Tabs.Panel value="chapters" pt="lg">
           <ChapterList />
-        </Tabs.Panel>
-
-        <Tabs.Panel value="new-chapter" pt="lg">
-          <Text c="dimmed" size="sm">
-            Thêm chương mới — nằm ngoài phạm vi nhiệm vụ hiện tại.
-          </Text>
         </Tabs.Panel>
       </Tabs>
 
