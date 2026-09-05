@@ -52,6 +52,8 @@ import {
   type BlockDraft,
   type BlockType,
   type MediaBlockDraft,
+  type FlashcardBlockDraft,
+  type QuizBlockDraft,
   type PageDraft,
   type TextBlockDraft,
 } from '../store/chapterBuilderStore';
@@ -65,20 +67,20 @@ const ACCESS_OPTIONS: Array<{
   title: string;
   subtitle: string;
 }> = [
-  { value: 'PUBLIC', icon: IconWorld, title: 'Công khai', subtitle: 'Ai cũng xem được' },
-  { value: 'PRIVATE', icon: IconLock, title: 'Đóng', subtitle: 'Chỉ thành viên đã tham gia' },
-  { value: 'PROTECTED', icon: IconKey, title: 'Khóa mật mã', subtitle: 'Cần nhập mật mã để vào' },
-];
+    { value: 'PUBLIC', icon: IconWorld, title: 'Công khai', subtitle: 'Ai cũng xem được' },
+    { value: 'PRIVATE', icon: IconLock, title: 'Đóng', subtitle: 'Chỉ thành viên đã tham gia' },
+    { value: 'PROTECTED', icon: IconKey, title: 'Khóa mật mã', subtitle: 'Cần nhập mật mã để vào' },
+  ];
 
 const MEDIA_SUB_TYPES: Array<{
   value: MediaBlockDraft['blockType'];
   label: string;
   icon: typeof IconPhoto;
 }> = [
-  { value: 'IMAGE', label: 'Ảnh', icon: IconPhoto },
-  { value: 'AUDIO', label: 'Âm thanh', icon: IconMusic },
-  { value: 'VIDEO', label: 'Video', icon: IconVideo },
-];
+    { value: 'IMAGE', label: 'Ảnh', icon: IconPhoto },
+    { value: 'AUDIO', label: 'Âm thanh', icon: IconMusic },
+    { value: 'VIDEO', label: 'Video', icon: IconVideo },
+  ];
 
 function acceptFor(blockType: MediaBlockDraft['blockType']) {
   if (blockType === 'IMAGE') return 'image/*';
@@ -92,34 +94,6 @@ function mediaLabel(blockType: MediaBlockDraft['blockType']) {
   return 'video';
 }
 
-// ---------- Flashcard / Quiz stub types ----------
-// `BlockType` trong chapterBuilderStore hiện chỉ có TEXT/IMAGE/VIDEO/AUDIO.
-// Flashcard & Quiz là 2 loại block đã có ở phía đọc (page-content: FlashcardBlock/QuizBlock)
-// nhưng CHƯA có contract để Creator soạn thảo. Để không đụng vào store (theo yêu cầu),
-// 2 khối này được dựng UI ở đây dưới dạng state cục bộ của trang đang active — nhập liệu được,
-// nhưng CHƯA nằm trong ChapterDraftSnapshot nên chưa được gửi kèm khi submit.
-// TODO: khi store/BE bổ sung FLASHCARD/QUIZ vào BlockType, chuyển state này vào chapterBuilderStore.
-interface FlashcardStubBlock {
-  localId: string;
-  type: 'FLASHCARD';
-  front: string;
-  back: string;
-}
-
-interface QuizAnswerStub {
-  id: string;
-  text: string;
-  isCorrect: boolean;
-}
-
-interface QuizStubBlock {
-  localId: string;
-  type: 'QUIZ';
-  question: string;
-  answers: QuizAnswerStub[];
-}
-
-type StubBlock = FlashcardStubBlock | QuizStubBlock;
 
 // ---------- Block cards ----------
 
@@ -240,143 +214,143 @@ function MediaBlockCard({ pageTempId, block }: { pageTempId: string; block: Medi
 }
 
 function BlockCard({ pageTempId, block }: { pageTempId: string; block: BlockDraft }) {
-  if (block.blockType === 'TEXT') {
-    return <TextBlockCard pageTempId={pageTempId} block={block} />;
+  switch (block.blockType) {
+    case 'TEXT':
+      return <TextBlockCard pageTempId={pageTempId} block={block} />;
+    case 'FLASHCARD':
+      return <FlashcardBlockCard pageTempId={pageTempId} block={block} />;
+    case 'QUIZ':
+      return <QuizBlockCard pageTempId={pageTempId} block={block} />;
+    default:
+      return <MediaBlockCard pageTempId={pageTempId} block={block} />;
   }
-  return <MediaBlockCard pageTempId={pageTempId} block={block} />;
 }
 
-function FlashcardBlockCard({
-  block,
-  onChange,
-  onRemove,
-}: {
-  block: FlashcardStubBlock;
-  onChange: (patch: Partial<Pick<FlashcardStubBlock, 'front' | 'back'>>) => void;
-  onRemove: () => void;
-}) {
+function FlashcardBlockCard({ pageTempId, block }: { pageTempId: string; block: FlashcardBlockDraft }) {
+  const updateFlashcardItem = useChapterBuilderStore((s) => s.updateFlashcardItem);
+  const addFlashcardItem = useChapterBuilderStore((s) => s.addFlashcardItem);
+  const removeFlashcardItem = useChapterBuilderStore((s) => s.removeFlashcardItem);
+  const removeBlock = useChapterBuilderStore((s) => s.removeBlock);
+
   return (
     <Card withBorder shadow="sm" radius="md" p="xl">
       <Group justify="space-between" mb="sm">
         <Group gap={6}>
           <IconCards size={16} />
-          <Text size="sm" fw={600} tt="uppercase" c="dimmed">
-            Flashcard
-          </Text>
+          <Text size="sm" fw={600} tt="uppercase" c="dimmed">Flashcard</Text>
         </Group>
-        <ActionIcon variant="subtle" color="red" aria-label="Xóa khối" onClick={onRemove}>
+        <ActionIcon variant="subtle" color="red" aria-label="Xóa khối" onClick={() => removeBlock(pageTempId, block.blockTempId)}>
           <IconTrash size={16} />
         </ActionIcon>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <TextInput
-          size="md"
-          label="Mặt trước"
-          placeholder="Nhập nội dung mặt trước..."
-          value={block.front}
-          onChange={(e) => onChange({ front: e.currentTarget.value })}
-        />
-        <TextInput
-          size="md"
-          label="Mặt sau"
-          placeholder="Nhập nội dung mặt sau..."
-          value={block.back}
-          onChange={(e) => onChange({ back: e.currentTarget.value })}
-        />
-      </SimpleGrid>
+      <Stack gap="md">
+        {block.items.map((item, index) => (
+          <Card key={item.itemTempId} withBorder radius="sm" p="md" bg="gray.0">
+            <Group justify="space-between" mb={6}>
+              <Text size="xs" fw={600} c="dimmed">Thẻ {index + 1}</Text>
+              {block.items.length > 1 && (
+                <ActionIcon size="sm" variant="subtle" color="red" aria-label="Xóa thẻ"
+                  onClick={() => removeFlashcardItem(pageTempId, block.blockTempId, item.itemTempId)}>
+                  <IconTrash size={14} />
+                </ActionIcon>
+              )}
+            </Group>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput size="md" label="Mặt trước" placeholder="Nhập nội dung mặt trước..."
+                value={item.frontText}
+                onChange={(e) => updateFlashcardItem(pageTempId, block.blockTempId, item.itemTempId, { frontText: e.currentTarget.value })} />
+              <TextInput size="md" label="Mặt sau" placeholder="Nhập nội dung mặt sau..."
+                value={item.backText}
+                onChange={(e) => updateFlashcardItem(pageTempId, block.blockTempId, item.itemTempId, { backText: e.currentTarget.value })} />
+            </SimpleGrid>
+          </Card>
+        ))}
+      </Stack>
+
+      <Button variant="subtle" size="xs" mt="sm" leftSection={<IconPlus size={14} />}
+        onClick={() => addFlashcardItem(pageTempId, block.blockTempId)}>
+        Thêm thẻ
+      </Button>
     </Card>
   );
 }
 
-function QuizBlockCard({
-  block,
-  onChange,
-  onRemove,
-}: {
-  block: QuizStubBlock;
-  onChange: (patch: Partial<Pick<QuizStubBlock, 'question' | 'answers'>>) => void;
-  onRemove: () => void;
-}) {
-  const updateAnswerText = (answerId: string, text: string) => {
-    onChange({ answers: block.answers.map((a) => (a.id === answerId ? { ...a, text } : a)) });
-  };
-
-  const setCorrectAnswer = (answerId: string) => {
-    onChange({ answers: block.answers.map((a) => ({ ...a, isCorrect: a.id === answerId })) });
-  };
-
-  const addAnswer = () => {
-    onChange({
-      answers: [...block.answers, { id: crypto.randomUUID(), text: '', isCorrect: false }],
-    });
-  };
-
-  const removeAnswer = (answerId: string) => {
-    onChange({ answers: block.answers.filter((a) => a.id !== answerId) });
-  };
+function QuizBlockCard({ pageTempId, block }: { pageTempId: string; block: QuizBlockDraft }) {
+  const updateQuizQuestion = useChapterBuilderStore((s) => s.updateQuizQuestion);
+  const addQuizQuestion = useChapterBuilderStore((s) => s.addQuizQuestion);
+  const removeQuizQuestion = useChapterBuilderStore((s) => s.removeQuizQuestion);
+  const addQuizOption = useChapterBuilderStore((s) => s.addQuizOption);
+  const updateQuizOptionText = useChapterBuilderStore((s) => s.updateQuizOptionText);
+  const setCorrectQuizOption = useChapterBuilderStore((s) => s.setCorrectQuizOption);
+  const removeQuizOption = useChapterBuilderStore((s) => s.removeQuizOption);
+  const removeBlock = useChapterBuilderStore((s) => s.removeBlock);
 
   return (
     <Card withBorder shadow="sm" radius="md" p="xl">
       <Group justify="space-between" mb="sm">
         <Group gap={6}>
           <IconChecklist size={16} />
-          <Text size="sm" fw={600} tt="uppercase" c="dimmed">
-            Quiz
-          </Text>
+          <Text size="sm" fw={600} tt="uppercase" c="dimmed">Quiz</Text>
         </Group>
-        <ActionIcon variant="subtle" color="red" aria-label="Xóa khối" onClick={onRemove}>
+        <ActionIcon variant="subtle" color="red" aria-label="Xóa khối" onClick={() => removeBlock(pageTempId, block.blockTempId)}>
           <IconTrash size={16} />
         </ActionIcon>
       </Group>
 
-      <TextInput
-        size="md"
-        label="Đề bài"
-        placeholder="Nhập câu hỏi..."
-        value={block.question}
-        onChange={(e) => onChange({ question: e.currentTarget.value })}
-        mb="sm"
-      />
+      <Stack gap="lg">
+        {block.questions.map((question, qIndex) => (
+          <Card key={question.questionTempId} withBorder radius="sm" p="md" bg="gray.0">
+            <Group justify="space-between" mb="sm">
+              <Text size="xs" fw={700} c="dimmed">Câu hỏi {qIndex + 1}</Text>
+              {block.questions.length > 1 && (
+                <ActionIcon size="sm" variant="subtle" color="red" aria-label="Xóa câu hỏi"
+                  onClick={() => removeQuizQuestion(pageTempId, block.blockTempId, question.questionTempId)}>
+                  <IconTrash size={14} />
+                </ActionIcon>
+              )}
+            </Group>
 
-      <Stack gap="xs">
-        {block.answers.map((answer, index) => (
-          <Group key={answer.id} gap="sm" wrap="nowrap" align="center">
-            <Checkbox
-              size="md"
-              checked={answer.isCorrect}
-              onChange={() => setCorrectAnswer(answer.id)}
-              aria-label="Đáp án đúng"
-            />
-            <TextInput
-              size="md"
-              style={{ flex: 1 }}
-              placeholder={`Đáp án ${index + 1}`}
-              value={answer.text}
-              onChange={(e) => updateAnswerText(answer.id, e.currentTarget.value)}
-            />
-            {block.answers.length > 2 && (
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                aria-label="Xóa đáp án"
-                onClick={() => removeAnswer(answer.id)}
-              >
-                <IconTrash size={14} />
-              </ActionIcon>
-            )}
-          </Group>
+            <TextInput size="md" label="Đề bài" placeholder="Nhập câu hỏi..."
+              value={question.questionText}
+              onChange={(e) => updateQuizQuestion(pageTempId, block.blockTempId, question.questionTempId, { questionText: e.currentTarget.value })}
+              mb="sm" />
+
+            <Stack gap="xs">
+              {question.options.map((option, oIndex) => (
+                <Group key={option.optionTempId} gap="sm" wrap="nowrap" align="center">
+                  <Checkbox size="md" checked={option.isCorrect}
+                    onChange={() => setCorrectQuizOption(pageTempId, block.blockTempId, question.questionTempId, option.optionTempId)}
+                    aria-label="Đáp án đúng" />
+                  <TextInput size="md" style={{ flex: 1 }} placeholder={`Đáp án ${oIndex + 1}`}
+                    value={option.optionText}
+                    onChange={(e) => updateQuizOptionText(pageTempId, block.blockTempId, question.questionTempId, option.optionTempId, e.currentTarget.value)} />
+                  {question.options.length > 2 && (
+                    <ActionIcon variant="subtle" color="red" aria-label="Xóa đáp án"
+                      onClick={() => removeQuizOption(pageTempId, block.blockTempId, question.questionTempId, option.optionTempId)}>
+                      <IconTrash size={14} />
+                    </ActionIcon>
+                  )}
+                </Group>
+              ))}
+            </Stack>
+
+            <Button variant="subtle" size="xs" mt="xs" leftSection={<IconPlus size={14} />}
+              onClick={() => addQuizOption(pageTempId, block.blockTempId, question.questionTempId)}>
+              Thêm đáp án
+            </Button>
+
+            <Textarea mt="sm" size="sm" label="Giải thích (tùy chọn)"
+              placeholder="Giải thích vì sao đáp án đúng là đáp án này..." autosize minRows={2}
+              value={question.explanation}
+              onChange={(e) => updateQuizQuestion(pageTempId, block.blockTempId, question.questionTempId, { explanation: e.currentTarget.value })} />
+          </Card>
         ))}
       </Stack>
 
-      <Button
-        variant="subtle"
-        size="xs"
-        mt="xs"
-        leftSection={<IconPlus size={14} />}
-        onClick={addAnswer}
-      >
-        Thêm đáp án
+      <Button variant="light" size="xs" mt="md" leftSection={<IconPlus size={14} />}
+        onClick={() => addQuizQuestion(pageTempId, block.blockTempId)}>
+        Thêm câu hỏi
       </Button>
     </Card>
   );
@@ -414,9 +388,8 @@ function PageTabs({
         {pages.map((page, index) => (
           <UnstyledButton
             key={page.pageTempId}
-            className={`${classes.pageTab} ${
-              page.pageTempId === activePageTempId ? classes.pageTabActive : ''
-            }`}
+            className={`${classes.pageTab} ${page.pageTempId === activePageTempId ? classes.pageTabActive : ''
+              }`}
             onClick={() => setActivePage(page.pageTempId)}
           >
             Trang {index + 1}
@@ -479,7 +452,6 @@ export default function ChapterBuilderPage() {
   } = useFetchChapterDetail(chapterId);
 
   const [showAddMenu, setShowAddMenu] = useState(false);
-  const [stubBlocksByPage, setStubBlocksByPage] = useState<Record<string, StubBlock[]>>({});
 
   // Chỉ hydrate 1 lần cho mỗi chapterId, tránh việc query refetch ngầm ghi đè bản nháp Creator đang soạn dở.
   const hasHydratedRef = useRef(false);
@@ -515,47 +487,6 @@ export default function ChapterBuilderPage() {
   const activePage = pages.find((p) => p.pageTempId === activePageTempId) ?? pages[0] ?? null;
   const activePageIndex = activePage ? pages.indexOf(activePage) : -1;
 
-  const addStubBlock = (pageTempId: string, type: StubBlock['type']) => {
-    setStubBlocksByPage((prev) => {
-      const existing = prev[pageTempId] ?? [];
-      const newBlock: StubBlock =
-        type === 'FLASHCARD'
-          ? { localId: crypto.randomUUID(), type: 'FLASHCARD', front: '', back: '' }
-          : {
-              localId: crypto.randomUUID(),
-              type: 'QUIZ',
-              question: '',
-              answers: [
-                { id: crypto.randomUUID(), text: '', isCorrect: true },
-                { id: crypto.randomUUID(), text: '', isCorrect: false },
-              ],
-            };
-      return { ...prev, [pageTempId]: [...existing, newBlock] };
-    });
-  };
-
-  const updateStubBlock = (
-    pageTempId: string,
-    localId: string,
-    patch:
-      | Partial<Pick<FlashcardStubBlock, 'front' | 'back'>>
-      | Partial<Pick<QuizStubBlock, 'question' | 'answers'>>,
-  ) => {
-    setStubBlocksByPage((prev) => ({
-      ...prev,
-      [pageTempId]: (prev[pageTempId] ?? []).map((b) =>
-        b.localId === localId ? ({ ...b, ...patch } as StubBlock) : b,
-      ),
-    }));
-  };
-
-  const removeStubBlock = (pageTempId: string, localId: string) => {
-    setStubBlocksByPage((prev) => ({
-      ...prev,
-      [pageTempId]: (prev[pageTempId] ?? []).filter((b) => b.localId !== localId),
-    }));
-  };
-
   if (isEditMode && isLoadingChapterDetail) {
     return (
       <Center h="60vh">
@@ -563,12 +494,6 @@ export default function ChapterBuilderPage() {
       </Center>
     );
   }
-
-  const handleSaveDraft = () => {
-    // Chưa có API lưu nháp trong contract -> state đã nằm sẵn trong Zustand suốt phiên làm việc,
-    // đây tạm thời chỉ là xác nhận UX. Nối API khi Backend bổ sung endpoint.
-    notifications.show({ message: 'Đã lưu nháp' });
-  };
 
   const handleDeletePage = (pageTempId: string) => {
     modals.openConfirmModal({
@@ -580,68 +505,50 @@ export default function ChapterBuilderPage() {
     });
   };
 
-  const handlePublish = () => {
-    if (!chapterTitle.trim()) {
-      notifications.show({
-        title: 'Thiếu tiêu đề',
-        message: 'Vui lòng nhập tiêu đề chương.',
-        color: 'red',
-      });
-      return;
-    }
-    // Luồng Sửa: nếu chương vốn đã PROTECTED từ trước và Creator để trống ô mật mã -> hiểu là giữ
-    // nguyên mật mã cũ (BE không trả mật mã thật khi GET). Chỉ bắt buộc nhập mật mã mới khi Tạo mới,
-    // hoặc khi Creator vừa đổi từ PUBLIC/PRIVATE sang PROTECTED trong lúc Sửa.
-    const isSwitchingToProtected = isEditMode && originalAccessTypeRef.current !== 'PROTECTED';
-    const passcodeRequired = accessType === 'PROTECTED' && (!isEditMode || isSwitchingToProtected);
-    if (passcodeRequired && !passcode.trim()) {
-      notifications.show({
-        title: 'Thiếu mật mã',
-        message: 'Chương ở chế độ Khóa mật mã cần nhập mật mã truy cập.',
-        color: 'red',
-      });
-      return;
-    }
-    if (pages.length === 0) {
-      notifications.show({
-        title: 'Chưa có trang nào',
-        message: 'Thêm ít nhất 1 trang trước khi đăng.',
-        color: 'red',
-      });
-      return;
-    }
+  const handleSubmitChapter = (isDraft: boolean) => {
+  if (!chapterTitle.trim()) {
+    notifications.show({ title: 'Thiếu tiêu đề', message: 'Vui lòng nhập tiêu đề chương.', color: 'red' });
+    return;
+  }
+  if (pages.length === 0) {
+    notifications.show({ title: 'Chưa có trang nào', message: 'Thêm ít nhất 1 trang trước khi lưu.', color: 'red' });
+    return;
+  }
+  const isSwitchingToProtected = isEditMode && originalAccessTypeRef.current !== 'PROTECTED';
+  const passcodeRequired = accessType === 'PROTECTED' && (!isEditMode || isSwitchingToProtected);
+  if (passcodeRequired && !passcode.trim()) {
+    notifications.show({ title: 'Thiếu mật mã', message: 'Chương ở chế độ Khóa mật mã cần nhập mật mã truy cập.', color: 'red' });
+    return;
+  }
 
-    submitChapter(
-      {
-        mode: isEditMode ? 'edit' : 'create',
-        courseId,
-        chapterId,
-        draftState: { chapterTitle, accessType, passcode, pages },
-        removedPageIds,
-        removedBlockIds,
+  submitChapter(
+    {
+      mode: isEditMode ? 'edit' : 'create',
+      courseId,
+      chapterId,
+      draftState: { chapterTitle, accessType, passcode, isDraft, pages },
+      removedPageIds,
+      removedBlockIds,
+    },
+    {
+      onSuccess: () => {
+        notifications.show({
+          title: isDraft ? 'Đã lưu nháp' : (isEditMode ? 'Cập nhật chương thành công' : 'Đăng chương thành công'),
+          message: chapterTitle,
+          color: 'green',
+        });
+        resetStore();
+        navigate(`/creator/courses/${courseId}`);
       },
-      {
-        onSuccess: () => {
-          notifications.show({
-            title: isEditMode ? 'Cập nhật chương thành công' : 'Đăng chương thành công',
-            message: chapterTitle,
-            color: 'green',
-          });
-          resetStore();
-          navigate(`/creator/courses/${courseId}`);
-        },
-        onError: () => {
-          notifications.show({
-            title: isEditMode ? 'Cập nhật chương thất bại' : 'Đăng chương thất bại',
-            message: isEditMode
-              ? 'Có lỗi khi lưu thay đổi. Bản nháp vẫn được giữ nguyên, thử lại nhé.'
-              : 'Có lỗi khi tạo chương. Bản nháp vẫn được giữ nguyên, thử lại nhé.',
-            color: 'red',
-          });
-        },
+      onError: () => {
+        notifications.show({ title: 'Có lỗi xảy ra', message: 'Thao tác thất bại, thử lại nhé.', color: 'red' });
       },
-    );
-  };
+    }
+  );
+};
+
+  const handleSaveDraft = () => handleSubmitChapter(true);
+  const handlePublish = () => handleSubmitChapter(false);
 
   return (
     <Box>
@@ -756,24 +663,6 @@ export default function ChapterBuilderPage() {
               <BlockCard key={block.blockTempId} pageTempId={activePage.pageTempId} block={block} />
             ))}
 
-            {(stubBlocksByPage[activePage.pageTempId] ?? []).map((block) =>
-              block.type === 'FLASHCARD' ? (
-                <FlashcardBlockCard
-                  key={block.localId}
-                  block={block}
-                  onChange={(patch) => updateStubBlock(activePage.pageTempId, block.localId, patch)}
-                  onRemove={() => removeStubBlock(activePage.pageTempId, block.localId)}
-                />
-              ) : (
-                <QuizBlockCard
-                  key={block.localId}
-                  block={block}
-                  onChange={(patch) => updateStubBlock(activePage.pageTempId, block.localId, patch)}
-                  onRemove={() => removeStubBlock(activePage.pageTempId, block.localId)}
-                />
-              ),
-            )}
-
             <Box mt="xl">
               <Button
                 variant="default"
@@ -815,7 +704,7 @@ export default function ChapterBuilderPage() {
                     size="md"
                     leftSection={<IconCards size={16} />}
                     onClick={() => {
-                      addStubBlock(activePage.pageTempId, 'FLASHCARD');
+                      addBlock(activePage.pageTempId, 'FLASHCARD');
                       setShowAddMenu(false);
                     }}
                   >
@@ -826,7 +715,7 @@ export default function ChapterBuilderPage() {
                     size="md"
                     leftSection={<IconChecklist size={16} />}
                     onClick={() => {
-                      addStubBlock(activePage.pageTempId, 'QUIZ');
+                      addBlock(activePage.pageTempId, 'QUIZ');
                       setShowAddMenu(false);
                     }}
                   >

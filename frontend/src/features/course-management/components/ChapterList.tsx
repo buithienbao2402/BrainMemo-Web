@@ -60,7 +60,9 @@ export function ChapterList() {
   const courseId = Number(id);
   const navigate = useNavigate();
 
-  const { data: chapters, isLoading } = useCourseChapters(courseId);
+  // Tách 2 query độc lập — mỗi tab có cache/loading state riêng
+  const publishedQuery = useCourseChapters(courseId, false);
+  const draftQuery = useCourseChapters(courseId, true);
   const { mutate: deleteChapter, isPending: isDeleting } = useDeleteChapter(courseId);
 
   const [confirmOpened, { open: openConfirm, close: closeConfirm }] = useDisclosure(false);
@@ -94,6 +96,97 @@ export function ChapterList() {
     });
   };
 
+  // Dùng chung cho cả 2 tab — nhận data/loading của query tương ứng + text rỗng riêng cho từng tab
+  function renderChapterTable(
+    chapters: Chapter[] | undefined,
+    isLoading: boolean,
+    emptyDescription: string
+  ) {
+    if (isLoading) {
+      return (
+        <Stack gap="xs">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} height={44} radius="sm" />
+          ))}
+        </Stack>
+      );
+    }
+
+    if (!chapters || chapters.length === 0) {
+      return <EmptyState title="Chưa có chương nào" description={emptyDescription} />;
+    }
+
+    return (
+      <Table verticalSpacing="sm" highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th w={60}>STT</Table.Th>
+            <Table.Th>Tên chương</Table.Th>
+            <Table.Th w={120}>Truy cập</Table.Th>
+            <Table.Th w={140}>Ngày đăng</Table.Th>
+            <Table.Th w={120} ta="center">
+              Thao tác
+            </Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {chapters.map((chapter, index) => (
+            <Table.Tr key={chapter.id}>
+              <Table.Td>
+                <Text size="sm" c="dimmed">
+                  #{index + 1}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" fw={500}>
+                  {chapter.title}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <AccessBadge accessType={chapter.accessType} />
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" c="dimmed">
+                  {formatDate(chapter.createdAt)}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Group gap={6} wrap="nowrap" justify="center">
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    aria-label="Xem chương"
+                    onClick={() => navigate(`/creator/chapters/${chapter.id}`)}
+                  >
+                    <IconEye size={16} />
+                  </ActionIcon>
+
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    aria-label="Sửa chương"
+                    onClick={() => navigate(`/creator/courses/${courseId}/chapters/${chapter.id}/edit`)}
+                  >
+                    <IconPencil size={16} />
+                  </ActionIcon>
+
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    aria-label="Xóa chương"
+                    onClick={() => handleAskDelete(chapter)}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    );
+  }
+
   return (
     <>
       <Tabs defaultValue="published">
@@ -103,90 +196,19 @@ export function ChapterList() {
         </Tabs.List>
 
         <Tabs.Panel value="published">
-          {isLoading ? (
-            <Stack gap="xs">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} height={44} radius="sm" />
-              ))}
-            </Stack>
-          ) : !chapters || chapters.length === 0 ? (
-            <EmptyState
-              title="Chưa có chương nào"
-              description='Bấm "Thêm chương mới" để bắt đầu tạo nội dung.'
-            />
-          ) : (
-            <Table verticalSpacing="sm" highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={60}>STT</Table.Th>
-                  <Table.Th>Tên chương</Table.Th>
-                  <Table.Th w={120}>Truy cập</Table.Th>
-                  <Table.Th w={140}>Ngày đăng</Table.Th>
-                  <Table.Th w={120} ta="center" >Thao tác</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {chapters.map((chapter, index) => (
-                  <Table.Tr key={chapter.id}>
-                    <Table.Td>
-                      <Text size="sm" c="dimmed">
-                        #{index + 1}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm" fw={500}>
-                        {chapter.title}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <AccessBadge accessType={chapter.accessType} />
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm" c="dimmed">
-                        {formatDate(chapter.createdAt)}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap={6} wrap="nowrap" justify="center">
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label="Xem chương"
-                          onClick={() => navigate(`/creator/chapters/${chapter.id}`)}
-                        >
-                          <IconEye size={16} />
-                        </ActionIcon>
-
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label="Sửa chương"
-                          onClick={() => navigate(`/creator/courses/${courseId}/chapters/${chapter.id}/edit`)}
-                        >
-                          <IconPencil size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          aria-label="Xóa chương"
-                          onClick={() => handleAskDelete(chapter)}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+          {renderChapterTable(
+            publishedQuery.data,
+            publishedQuery.isLoading,
+            'Bấm "Thêm chương mới" để bắt đầu tạo nội dung.'
           )}
         </Tabs.Panel>
 
         <Tabs.Panel value="draft">
-          <EmptyState
-            title="Chưa có chương nháp nào"
-            description="Các chương đang soạn dở sẽ hiện ở đây."
-          />
+          {renderChapterTable(
+            draftQuery.data,
+            draftQuery.isLoading,
+            'Các chương đang soạn dở sẽ hiện ở đây.'
+          )}
         </Tabs.Panel>
       </Tabs>
 

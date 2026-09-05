@@ -37,7 +37,7 @@ public class PageService : IPageService
         return await _context.Pages
             .Where(p => p.ChapterId == chapterId)
             .OrderBy(p => p.OrderIndex)
-            .Select(p => new { p.PageId, p.ChapterId, p.Title, p.OrderIndex })
+            .Select(p => new { id = p.PageId, chapterId = p.ChapterId, title = p.Title, orderIndex = p.OrderIndex })
             .ToListAsync();
     }
 
@@ -57,17 +57,17 @@ public class PageService : IPageService
 
         return new
         {
-            page.PageId,
-            page.ChapterId,
-            page.Title,
-            page.OrderIndex,
+            id = page.PageId,
+            chapterId = page.ChapterId,
+            title = page.Title,
+            orderIndex = page.OrderIndex,
             Blocks = page.Blocks.Select(b => new
             {
-                b.BlockId,
-                b.BlockType,
-                b.OrderIndex,
-                b.ContentText,
-                Quiz = b.Quiz == null ? null : new
+                id = b.BlockId,
+                blockType = b.BlockType,
+                orderIndex = b.OrderIndex,
+                contentText = b.ContentText,
+                quiz = b.Quiz == null ? null : new
                 {
                     b.Quiz.QuizId,
                     Questions = b.Quiz.QuizQuestions.Select(q => new
@@ -84,7 +84,7 @@ public class PageService : IPageService
                         }).ToList()
                     }).ToList()
                 },
-                Flashcards = b.FlashcardSet == null ? null : b.FlashcardSet.Flashcards.Select(f => new
+                flashcards = b.FlashcardSet == null ? null : b.FlashcardSet.Flashcards.Select(f => new
                 {
                     f.FlashcardId,
                     f.FrontText,

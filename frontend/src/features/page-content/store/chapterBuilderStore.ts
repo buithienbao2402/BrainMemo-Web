@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AccessType } from '@/features/course-management/types/course-management.types';
 
-export type BlockType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO';
+export type BlockType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FLASHCARD' | 'QUIZ';
 
 interface BaseBlockDraft {
   blockTempId: string;
@@ -23,55 +23,78 @@ export interface MediaBlockDraft extends BaseBlockDraft {
   rawFile: File | null;
   /**
    * Object URL để preview - tự tạo/thu hồi ở UI khi Creator chọn file mới, KHÔNG gửi lên server.
-   * Khi hydrate từ BE (luồng Sửa), đây là URL công khai mà BE đã resolve sẵn từ objectKey, dùng để
-   * hiển thị media đã có sẵn (không phải object URL cục bộ).
+   * Khi hydrate từ BE (luồng Sửa), đây là URL/objectKey mà BE trả về, dùng để hiển thị media đã có sẵn.
    */
   previewUrl: string | null;
 }
 
-export type BlockDraft = TextBlockDraft | MediaBlockDraft;
+export interface FlashcardItemInput {
+  itemTempId: string;
+  /** ID thật của flashcard nếu được hydrate từ server. Không dùng khi submit (BE full-replace theo blockId). */
+  flashcardId?: number;
+  frontText: string;
+  backText: string;
+}
+
+export interface FlashcardBlockDraft extends BaseBlockDraft {
+  blockType: 'FLASHCARD';
+  items: FlashcardItemInput[];
+}
+
+export interface QuizOptionInput {
+  optionTempId: string;
+  optionId?: number;
+  optionText: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestionInput {
+  questionTempId: string;
+  questionId?: number;
+  questionText: string;
+  explanation: string;
+  options: QuizOptionInput[];
+}
+
+export interface QuizBlockDraft extends BaseBlockDraft {
+  blockType: 'QUIZ';
+  questions: QuizQuestionInput[];
+}
+
+export type BlockDraft = TextBlockDraft | MediaBlockDraft | FlashcardBlockDraft | QuizBlockDraft;
 
 export interface PageDraft {
   pageTempId: string;
-  /**
-   * ID thật của trang trên server. Có giá trị => trang đã tồn tại (luồng Sửa) -> PUT /api/pages/{id}.
-   * Không có giá trị => trang mới thêm trong phiên này -> POST /api/chapters/{chapterId}/pages.
-   */
   pageId?: number;
   title: string;
   blocks: BlockDraft[];
 }
 
-/** Snapshot state cần cho lúc submit (bỏ các action) - dùng chung cho mock/real API. */
 export interface ChapterDraftSnapshot {
   chapterTitle: string;
   accessType: AccessType;
   passcode: string;
+  isDraft: boolean;
   pages: PageDraft[];
 }
 
-/** Dữ liệu chương lấy về từ BE (GET /api/chapters/{id} + GET /api/pages/{id} cho từng trang),
- *  dùng để hydrate vào store khi vào luồng Sửa. */
 export interface ChapterServerSnapshot {
   chapterId: number;
   chapterTitle: string;
   accessType: AccessType;
+  isDraft: boolean;
   pages: PageDraft[];
 }
 
 interface ChapterBuilderState extends ChapterDraftSnapshot {
-  /** null = đang ở luồng Tạo mới. Có giá trị = đang Sửa chương này (dùng để PUT /api/chapters/{chapterId}). */
   chapterId: number | null;
   activePageTempId: string | null;
-  /** pageId thật đã bị Creator xóa khỏi draft trong luồng Sửa -> cần DELETE khi bấm "Lưu thay đổi". */
   removedPageIds: number[];
-  /** blockId thật đã bị Creator xóa khỏi draft trong luồng Sửa -> cần DELETE khi bấm "Lưu thay đổi". */
   removedBlockIds: number[];
 
-  /** Nạp dữ liệu chương đã lấy từ BE vào store (chỉ dùng cho luồng Sửa). */
   hydrateFromServer: (snapshot: ChapterServerSnapshot) => void;
   updateChapterInfo: (
-    info: Partial<Pick<ChapterDraftSnapshot, 'chapterTitle' | 'accessType' | 'passcode'>>
+    info: Partial<Pick<ChapterDraftSnapshot, 'chapterTitle' | 'accessType' | 'passcode' | 'isDraft'>>
   ) => void;
   addPage: () => void;
   removePage: (pageTempId: string) => void;
@@ -84,6 +107,45 @@ interface ChapterBuilderState extends ChapterDraftSnapshot {
     patch: Partial<Pick<TextBlockDraft, 'contentText'>> | Partial<Pick<MediaBlockDraft, 'rawFile' | 'previewUrl' | 'blockType'>>
   ) => void;
   removeBlock: (pageTempId: string, blockTempId: string) => void;
+
+  addFlashcardItem: (pageTempId: string, blockTempId: string) => void;
+  updateFlashcardItem: (
+    pageTempId: string,
+    blockTempId: string,
+    itemTempId: string,
+    patch: Partial<Pick<FlashcardItemInput, 'frontText' | 'backText'>>
+  ) => void;
+  removeFlashcardItem: (pageTempId: string, blockTempId: string, itemTempId: string) => void;
+
+  addQuizQuestion: (pageTempId: string, blockTempId: string) => void;
+  updateQuizQuestion: (
+    pageTempId: string,
+    blockTempId: string,
+    questionTempId: string,
+    patch: Partial<Pick<QuizQuestionInput, 'questionText' | 'explanation'>>
+  ) => void;
+  removeQuizQuestion: (pageTempId: string, blockTempId: string, questionTempId: string) => void;
+  addQuizOption: (pageTempId: string, blockTempId: string, questionTempId: string) => void;
+  updateQuizOptionText: (
+    pageTempId: string,
+    blockTempId: string,
+    questionTempId: string,
+    optionTempId: string,
+    optionText: string
+  ) => void;
+  setCorrectQuizOption: (
+    pageTempId: string,
+    blockTempId: string,
+    questionTempId: string,
+    optionTempId: string
+  ) => void;
+  removeQuizOption: (
+    pageTempId: string,
+    blockTempId: string,
+    questionTempId: string,
+    optionTempId: string
+  ) => void;
+
   resetStore: () => void;
 }
 
@@ -99,6 +161,30 @@ function createEmptyBlock(blockType: BlockType): BlockDraft {
   if (blockType === 'TEXT') {
     return { blockTempId: crypto.randomUUID(), blockType: 'TEXT', contentText: '' };
   }
+  if (blockType === 'FLASHCARD') {
+    return {
+      blockTempId: crypto.randomUUID(),
+      blockType: 'FLASHCARD',
+      items: [{ itemTempId: crypto.randomUUID(), frontText: '', backText: '' }],
+    };
+  }
+  if (blockType === 'QUIZ') {
+    return {
+      blockTempId: crypto.randomUUID(),
+      blockType: 'QUIZ',
+      questions: [
+        {
+          questionTempId: crypto.randomUUID(),
+          questionText: '',
+          explanation: '',
+          options: [
+            { optionTempId: crypto.randomUUID(), optionText: '', isCorrect: true },
+            { optionTempId: crypto.randomUUID(), optionText: '', isCorrect: false },
+          ],
+        },
+      ],
+    };
+  }
   return { blockTempId: crypto.randomUUID(), blockType, rawFile: null, previewUrl: null };
 }
 
@@ -109,11 +195,26 @@ function buildInitialState() {
     chapterTitle: '',
     accessType: 'PUBLIC' as AccessType,
     passcode: '',
+    isDraft: false,
     pages: [firstPage],
     activePageTempId: firstPage.pageTempId,
     removedPageIds: [] as number[],
     removedBlockIds: [] as number[],
   };
+}
+
+/** Helper dùng chung: áp `updater` lên đúng 1 block (theo pageTempId + blockTempId), giữ nguyên các block khác. */
+function updateBlockInPages(
+  pages: PageDraft[],
+  pageTempId: string,
+  blockTempId: string,
+  updater: (block: BlockDraft) => BlockDraft
+): PageDraft[] {
+  return pages.map((p) =>
+    p.pageTempId === pageTempId
+      ? { ...p, blocks: p.blocks.map((b) => (b.blockTempId === blockTempId ? updater(b) : b)) }
+      : p
+  );
 }
 
 export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
@@ -124,8 +225,7 @@ export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
       chapterId: snapshot.chapterId,
       chapterTitle: snapshot.chapterTitle,
       accessType: snapshot.accessType,
-      // BE không trả lại passcode thật khi GET (lý do bảo mật) -> để trống.
-      // UI hiểu ô trống trong luồng Sửa là "giữ nguyên mật mã cũ", chỉ gửi passcode mới khi Creator nhập lại.
+      isDraft: snapshot.isDraft,
       passcode: '',
       pages: snapshot.pages,
       activePageTempId: snapshot.pages[0]?.pageTempId ?? null,
@@ -152,7 +252,6 @@ export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
       return {
         pages,
         activePageTempId,
-        // Trang bị xóa đã tồn tại trên server (đang Sửa) -> ghi nhớ để DELETE khi Lưu thay đổi.
         removedPageIds:
           target?.pageId != null ? [...state.removedPageIds, target.pageId] : state.removedPageIds,
       };
@@ -179,11 +278,11 @@ export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
       pages: state.pages.map((p) =>
         p.pageTempId === pageTempId
           ? {
-              ...p,
-              blocks: p.blocks.map((b) =>
-                b.blockTempId === blockTempId ? ({ ...b, ...patch } as BlockDraft) : b
-              ),
-            }
+            ...p,
+            blocks: p.blocks.map((b) =>
+              b.blockTempId === blockTempId ? ({ ...b, ...patch } as BlockDraft) : b
+            ),
+          }
           : p
       ),
     })),
@@ -198,11 +297,171 @@ export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
             ? { ...p, blocks: p.blocks.filter((b) => b.blockTempId !== blockTempId) }
             : p
         ),
-        // Block bị xóa đã tồn tại trên server (đang Sửa) -> ghi nhớ để DELETE khi Lưu thay đổi.
         removedBlockIds:
           target?.blockId != null ? [...state.removedBlockIds, target.blockId] : state.removedBlockIds,
       };
     }),
+
+  // ---------------- FLASHCARD ----------------
+
+  addFlashcardItem: (pageTempId, blockTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'FLASHCARD') return b;
+        return {
+          ...b,
+          items: [...b.items, { itemTempId: crypto.randomUUID(), frontText: '', backText: '' }],
+        };
+      }),
+    })),
+
+  updateFlashcardItem: (pageTempId, blockTempId, itemTempId, patch) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'FLASHCARD') return b;
+        return {
+          ...b,
+          items: b.items.map((it) => (it.itemTempId === itemTempId ? { ...it, ...patch } : it)),
+        };
+      }),
+    })),
+
+  removeFlashcardItem: (pageTempId, blockTempId, itemTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'FLASHCARD') return b;
+        // Luôn giữ tối thiểu 1 cặp - khớp ràng buộc BE "Flashcard cần ít nhất 1 cặp mặt trước/sau".
+        if (b.items.length <= 1) return b;
+        return { ...b, items: b.items.filter((it) => it.itemTempId !== itemTempId) };
+      }),
+    })),
+
+  // ---------------- QUIZ ----------------
+
+  addQuizQuestion: (pageTempId, blockTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: [
+            ...b.questions,
+            {
+              questionTempId: crypto.randomUUID(),
+              questionText: '',
+              explanation: '',
+              options: [
+                { optionTempId: crypto.randomUUID(), optionText: '', isCorrect: true },
+                { optionTempId: crypto.randomUUID(), optionText: '', isCorrect: false },
+              ],
+            },
+          ],
+        };
+      }),
+    })),
+
+  updateQuizQuestion: (pageTempId, blockTempId, questionTempId, patch) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: b.questions.map((q) =>
+            q.questionTempId === questionTempId ? { ...q, ...patch } : q
+          ),
+        };
+      }),
+    })),
+
+  removeQuizQuestion: (pageTempId, blockTempId, questionTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        // Luôn giữ tối thiểu 1 câu hỏi - khớp ràng buộc BE "Quiz cần ít nhất 1 câu hỏi".
+        if (b.questions.length <= 1) return b;
+        return { ...b, questions: b.questions.filter((q) => q.questionTempId !== questionTempId) };
+      }),
+    })),
+
+  addQuizOption: (pageTempId, blockTempId, questionTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: b.questions.map((q) =>
+            q.questionTempId === questionTempId
+              ? {
+                ...q,
+                options: [...q.options, { optionTempId: crypto.randomUUID(), optionText: '', isCorrect: false }],
+              }
+              : q
+          ),
+        };
+      }),
+    })),
+
+  updateQuizOptionText: (pageTempId, blockTempId, questionTempId, optionTempId, optionText) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: b.questions.map((q) =>
+            q.questionTempId === questionTempId
+              ? {
+                ...q,
+                options: q.options.map((o) =>
+                  o.optionTempId === optionTempId ? { ...o, optionText } : o
+                ),
+              }
+              : q
+          ),
+        };
+      }),
+    })),
+
+  setCorrectQuizOption: (pageTempId, blockTempId, questionTempId, optionTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: b.questions.map((q) =>
+            q.questionTempId === questionTempId
+              ? {
+                ...q,
+                // Giống radio: chỉ 1 đáp án đúng - khớp ràng buộc BE "đúng 1 đáp án đúng".
+                options: q.options.map((o) => ({ ...o, isCorrect: o.optionTempId === optionTempId })),
+              }
+              : q
+          ),
+        };
+      }),
+    })),
+
+  removeQuizOption: (pageTempId, blockTempId, questionTempId, optionTempId) =>
+    set((state) => ({
+      pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+        if (b.blockType !== 'QUIZ') return b;
+        return {
+          ...b,
+          questions: b.questions.map((q) => {
+            if (q.questionTempId !== questionTempId) return q;
+            // Luôn giữ tối thiểu 2 đáp án - khớp ràng buộc BE "tối thiểu 2 đáp án".
+            if (q.options.length <= 2) return q;
+            const wasCorrect = q.options.find((o) => o.optionTempId === optionTempId)?.isCorrect;
+            const remaining = q.options.filter((o) => o.optionTempId !== optionTempId);
+            // Nếu vừa xóa đáp án đang là "đúng", tự gán lại đáp án đầu tiên còn lại làm đáp án đúng
+            // để tránh rơi vào trạng thái "0 đáp án đúng" (BE sẽ từ chối request này).
+            const options = wasCorrect
+              ? remaining.map((o, i) => ({ ...o, isCorrect: i === 0 }))
+              : remaining;
+            return { ...q, options };
+          }),
+        };
+      }),
+    })),
 
   resetStore: () => set(buildInitialState()),
 }));

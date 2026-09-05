@@ -26,11 +26,18 @@ public class ChapterService : IChapterService
             hashedPasscode = BCrypt.Net.BCrypt.HashPassword(dto.Passcode);
         }
 
+        int? maxOrderIndex = await _context.Chapters
+            .Where(c => c.CourseId == courseId)
+            .Select(c => (int?)c.OrderIndex)
+            .MaxAsync();
+
+        int nextOrderIndex = (maxOrderIndex ?? -1) + 1;
+
         var chapter = new Chapter
         {
             CourseId = courseId,
             Title = dto.Title,
-            OrderIndex = dto.OrderIndex,
+            OrderIndex = nextOrderIndex,
             AccessType = dto.AccessType ?? "PUBLIC",
             Passcode = hashedPasscode,
             IsDraft = dto.IsDraft,
@@ -60,14 +67,14 @@ public class ChapterService : IChapterService
             .OrderBy(c => c.OrderIndex)
             .Select(c => new
             {
-                c.ChapterId,
-                c.CourseId,
-                c.Title,
-                c.OrderIndex,
-                c.AccessType,
-                c.IsDraft,
-                c.CreatedAt,
-                TotalPages = c.Pages.Count
+                id = c.ChapterId,
+                courseId = c.CourseId,
+                title = c.Title,
+                orderIndex = c.OrderIndex,
+                accessType = c.AccessType,
+                isDraft = c.IsDraft,
+                createdAt = c.CreatedAt,
+                totalPages = c.Pages.Count
             })
             .ToListAsync();
 
@@ -100,19 +107,14 @@ public class ChapterService : IChapterService
 
         return new
         {
-            chapter.ChapterId,
-            chapter.CourseId,
-            chapter.Title,
-            chapter.OrderIndex,
-            chapter.AccessType,
-            chapter.IsDraft,
-            chapter.CreatedAt,
-            Pages = chapter.Pages.Select(p => new
-            {
-                p.PageId,
-                p.Title,
-                p.OrderIndex
-            }).ToList()
+            id = chapter.ChapterId,
+            courseId = chapter.CourseId,
+            title = chapter.Title,
+            orderIndex = chapter.OrderIndex,
+            accessType = chapter.AccessType,
+            isDraft = chapter.IsDraft,
+            createdAt = chapter.CreatedAt,
+            pages = chapter.Pages.Select(p => new { id = p.PageId, title = p.Title, orderIndex = p.OrderIndex }).ToList()
         };
     }
 
@@ -123,7 +125,6 @@ public class ChapterService : IChapterService
         if (chapter.Course.CreatorId != userId) throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa chương này.");
 
         chapter.Title = dto.Title;
-        chapter.OrderIndex = dto.OrderIndex;
         chapter.AccessType = dto.AccessType ?? "PUBLIC";
         chapter.IsDraft = dto.IsDraft;
 
