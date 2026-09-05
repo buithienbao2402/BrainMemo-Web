@@ -17,6 +17,8 @@ public partial class Chapter
 
     public string? Passcode { get; set; }
 
+    public bool IsDraft { get; set; } = false;
+
     public DateTime CreatedAt { get; set; }
 
     public virtual Course Course { get; set; } = null!;

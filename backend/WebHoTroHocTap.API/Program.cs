@@ -17,6 +17,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // 2. Đăng ký các Service (Tầng Business)
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IChapterService, ChapterService>();
+builder.Services.AddScoped<IPageService, PageService>();
+builder.Services.AddScoped<IBlockService, BlockService>();
 
 // 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
