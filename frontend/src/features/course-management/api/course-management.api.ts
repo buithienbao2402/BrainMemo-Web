@@ -14,7 +14,7 @@ export const courseManagementApi = {
     return {
       ...data,
       items: data.items.map((item: any) => ({
-        id: item.id,
+        id: item.courseId ?? item.id,
         title: item.title,
         description: item.description,
         coverImageUrl: item.cover_image_url ?? item.coverImageUrl,
@@ -42,7 +42,7 @@ export const courseManagementApi = {
     const item = response.data.data;
 
     return {
-      id: item.id,
+      id: item.courseId ?? item.id,
       title: item.title,
       description: item.description,
       coverImageUrl: item.cover_image_url ?? item.coverImageUrl,
@@ -54,4 +54,21 @@ export const courseManagementApi = {
       updatedAt: item.updated_at ?? item.updatedAt,
     };
   },
+
+  updateCourse: async (courseId: string, payload: CreateCoursePayload): Promise<void> => {
+  const body = {
+    title: payload.title,
+    description: payload.description,
+    coverImageObjectKey: payload.coverImageObjectKey,
+    accessType: payload.accessType,
+    passcode: payload.passcode,
+    status: payload.status, // CreateCoursePayload cần bổ sung field này — xem lưu ý bên dưới
+    tags: payload.tags,
+  };
+  await apiClient.put(`/courses/${courseId}`, body);
+},
+
+deleteCourse: async (courseId: string): Promise<void> => {
+  await apiClient.delete(`/courses/${courseId}`);
+},
 };

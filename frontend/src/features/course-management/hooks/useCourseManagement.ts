@@ -4,10 +4,11 @@ import { courseManagementMockApi } from '../api/course-management.mock.api';
 // Import api thật (MỚI THÊM)
 import { courseManagementApi } from '../api/course-management.api'; 
 import type { CreateCoursePayload } from '../types/course-management.types';
+import { courseDetailKeys } from './useCourseDetail';
 
 // ==========================================
 // CÔNG TẮC API: True = Chạy code gốc của ông, False = Gọi Backend
-const USE_MOCK = true;
+const USE_MOCK = false;
 // ==========================================
 
 export const courseManagementKeys = {
@@ -35,6 +36,31 @@ export function useCreateCourse() {
     onSuccess: () => {
       // Giữ nguyên logic gốc của ông
       queryClient.invalidateQueries({ queryKey: courseManagementKeys.myCourses }); 
+    },
+  });
+}
+
+export function useUpdateCourse(courseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateCoursePayload) =>
+      courseManagementApi.updateCourse(courseId, payload),
+    onSuccess: () => {
+      // Làm mới cả danh sách (Creator Dashboard) lẫn chi tiết khóa học đang xem
+      queryClient.invalidateQueries({ queryKey: courseManagementKeys.myCourses });
+      queryClient.invalidateQueries({ queryKey: courseDetailKeys.detail(courseId) });
+    },
+  });
+}
+
+export function useDeleteCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (courseId: string) => courseManagementApi.deleteCourse(courseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: courseManagementKeys.myCourses });
     },
   });
 }

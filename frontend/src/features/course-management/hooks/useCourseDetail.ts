@@ -8,6 +8,7 @@ import {
 import {
   getCourseDashboardStatsReal,
   getCourseInvitationsReal,
+  getCourseByIdReal,
 } from '../api/course-detail.api';
 
 // ==========================================
@@ -20,6 +21,7 @@ export const courseDetailKeys = {
   stats: (courseId: string) => [...courseDetailKeys.all, 'stats', courseId] as const,
   invitations: (courseId: string) =>
     [...courseDetailKeys.all, 'invitations', courseId] as const,
+  detail: (courseId: string) => [...courseDetailKeys.all, 'info', courseId] as const,
 };
 
 /** GET /api/courses/{id}/dashboard — thống kê + danh sách học viên */
@@ -43,5 +45,14 @@ export function useCourseInvitations(courseId: string) {
         ? getCourseInvitations(courseId) // Đúng y như gốc
         : getCourseInvitationsReal(courseId), // Đường phụ cho BE
     enabled: Boolean(courseId), // Giữ nguyên gốc
+  });
+}
+
+/** GET /api/courses/{id} — thông tin đầy đủ khóa học (không mock, luôn gọi API thật) */
+export function useCourseDetail(courseId: string) {
+  return useQuery({
+    queryKey: courseDetailKeys.detail(courseId),
+    queryFn: () => getCourseByIdReal(courseId),
+    enabled: Boolean(courseId),
   });
 }

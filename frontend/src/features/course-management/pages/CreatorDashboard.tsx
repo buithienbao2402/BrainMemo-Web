@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import PenLogo from "../../../assets/Pen.png";
 
 // Mock: chưa có endpoint stats tổng học viên toàn nền tảng, hardcode tạm theo thiết kế.
-const MOCK_TOTAL_PARTICIPANTS = 4321;
+const MOCK_TOTAL_PARTICIPANTS = 0;
 
 const STATUS_META: Record<CourseStatus, { label: string; color: string }> = {
   UPDATING: { label: 'ĐANG RA', color: 'orange' },

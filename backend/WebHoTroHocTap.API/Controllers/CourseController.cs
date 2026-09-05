@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebHoTroHocTap.API.DTOs.Common;
 using WebHoTroHocTap.API.DTOs.Course;
+using WebHoTroHocTap.Business.Exceptions;
 using WebHoTroHocTap.Business.Services;
 
 namespace WebHoTroHocTap.API.Controllers;
@@ -62,11 +63,17 @@ public class CourseController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateCourse([FromBody] CourseRequestDto dto)
     {
+        // #5: không dùng "!.Value" ép buộc nữa, kiểm tra tường minh
+        int? userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Phiên đăng nhập không hợp lệ." });
+        }
+
         try
         {
-            int userId = GetCurrentUserId()!.Value;
             int courseId = await _courseService.CreateCourseAsync(
-                userId,
+                userId.Value,
                 dto.Title,
                 dto.Description,
                 dto.CoverImageObjectKey,
@@ -76,6 +83,17 @@ public class CourseController : ControllerBase
             );
 
             return Ok(new ApiResponse<object> { Success = true, Message = "Tạo khóa học thành công", Data = new { courseId } });
+        }
+        catch (PasscodeRequiredException ex)
+        {
+            // TODO: đối chiếu lại đúng kiểu dữ liệu "Errors" trong ApiResponse<T> của bạn,
+            // đổi lại phần khởi tạo bên dưới cho khớp nếu khác.
+            return BadRequest(new ApiResponse<object>
+            {
+                Success = false,
+                Message = ex.Message,
+                Errors = new object[] { new { field = "passcode", code = "PASSCODE_REQUIRED", message = ex.Message } }
+            });
         }
         catch (Exception ex)
         {
@@ -87,17 +105,23 @@ public class CourseController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateCourse(int id, [FromBody] CourseRequestDto dto)
     {
+        int? userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Phiên đăng nhập không hợp lệ." });
+        }
+
         try
         {
-            int userId = GetCurrentUserId()!.Value;
             bool success = await _courseService.UpdateCourseAsync(
                 id,
-                userId,
+                userId.Value,
                 dto.Title,
                 dto.Description,
                 dto.CoverImageObjectKey,
                 dto.AccessType,
                 dto.Passcode,
+                dto.Status,
                 dto.Tags
             );
 
@@ -109,6 +133,15 @@ public class CourseController : ControllerBase
         {
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+        catch (PasscodeRequiredException ex)
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Success = false,
+                Message = ex.Message,
+                Errors = new object[] { new { field = "passcode", code = "PASSCODE_REQUIRED", message = ex.Message } }
+            });
+        }
         catch (Exception ex)
         {
             return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
@@ -119,10 +152,15 @@ public class CourseController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteCourse(int id)
     {
+        int? userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Phiên đăng nhập không hợp lệ." });
+        }
+
         try
         {
-            int userId = GetCurrentUserId()!.Value;
-            bool success = await _courseService.DeleteCourseAsync(id, userId);
+            bool success = await _courseService.DeleteCourseAsync(id, userId.Value);
             if (!success) return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy khóa học" });
 
             return Ok(new ApiResponse<object> { Success = true, Message = "Xóa khóa học thành công" });
@@ -139,7 +177,12 @@ public class CourseController : ControllerBase
 
     private int? GetCurrentUserId()
     {
+        // #5: TryParse thay vì Parse, không còn ném FormatException nếu claim sai định dạng
         var claim = User.FindFirst("userId");
-        return claim != null ? int.Parse(claim.Value) : null;
+        if (claim != null && int.TryParse(claim.Value, out int userId))
+        {
+            return userId;
+        }
+        return null;
     }
 }

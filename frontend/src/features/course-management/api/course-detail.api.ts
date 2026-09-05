@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/lib/axios';
-import type { CourseDashboardStats, CourseInvitation } from '../types/course-detail.types';
+import type { CourseDashboardStats, CourseInvitation, CourseDetail  } from '../types/course-detail.types';
 
 export async function getCourseDashboardStatsReal(courseId: string): Promise<CourseDashboardStats> {
   const response = await apiClient.get(`/courses/${courseId}/dashboard`);
@@ -33,4 +33,28 @@ export async function getCourseInvitationsReal(courseId: string): Promise<Course
     createdAt: inv.created_at ?? inv.createdAt,
     respondedAt: inv.responded_at ?? inv.respondedAt,
   }));
+}
+
+export async function getCourseByIdReal(courseId: string): Promise<CourseDetail> {
+  const response = await apiClient.get(`/courses/${courseId}`);
+  const data = response.data.data;
+
+  return {
+    courseId: data.courseId ?? data.course_id,
+    title: data.title,
+    description: data.description ?? null,
+    // BE hiện trả "coverImage" (object key thô, chưa resolve qua Minio) —
+    // giữ fallback này để không vỡ khi BE đổi tên field sau khi làm xong MinioUrlResolver.
+    coverImageUrl: data.coverImageUrl ?? data.coverImage ?? null,
+    accessType: data.accessType ?? data.access_type,
+    status: data.status,
+    creator: {
+      userId: data.creator?.userId ?? data.creator?.user_id,
+      fullName: data.creator?.fullName ?? data.creator?.full_name,
+      avatarUrl: data.creator?.avatarUrl ?? data.creator?.avatar_url ?? null,
+    },
+    tags: data.tags ?? [],
+    createdAt: data.createdAt ?? data.created_at,
+    updatedAt: data.updatedAt ?? data.updated_at,
+  };
 }
