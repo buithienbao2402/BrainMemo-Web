@@ -1,20 +1,22 @@
 import { apiClient } from '@/shared/lib/axios';
 import type { ApiResponse } from '@/shared/types/api.types';
 import type { AccessType } from '@/features/course-management/types/course-management.types';
-import type { 
-  BlockDraft, 
-  ChapterDraftSnapshot, 
-  PageDraft, 
-  ChapterServerSnapshot, 
-  MediaBlockDraft 
+import type {
+  BlockDraft,
+  ChapterDraftSnapshot,
+  PageDraft,
+  ChapterServerSnapshot,
+  MediaBlockDraft,
+  FlashcardBlockDraft,
+  QuizBlockDraft,
 } from '../store/chapterBuilderStore';
 
 interface CreateChapterResponseData {
-  id: number;
+  chapterId: number;
 }
 
 interface CreatePageResponseData {
-  id: number;
+  pageId: number;
 }
 
 interface PresignedUrlResponseData {
@@ -27,7 +29,29 @@ interface ChapterSummaryResponse {
   id: number;
   title: string;
   accessType: AccessType;
+  isDraft: boolean;
   pages: Array<{ id: number; title: string; orderIndex: number; accessType: AccessType }>;
+}
+
+interface QuizOptionResponse {
+  optionId: number;
+  optionText: string;
+  isCorrect: boolean;
+}
+
+interface QuizQuestionResponse {
+  questionId: number;
+  questionText: string;
+  explanation: string | null;
+  orderIndex: number;
+  options: QuizOptionResponse[];
+}
+
+interface FlashcardItemResponse {
+  flashcardId: number;
+  frontText: string;
+  backText: string;
+  orderIndex: number;
 }
 
 interface PageDetailResponse {
@@ -36,6 +60,8 @@ interface PageDetailResponse {
   blocks: Array<
     | { id: number; blockType: 'TEXT'; contentText: string }
     | { id: number; blockType: 'IMAGE' | 'AUDIO' | 'VIDEO'; mediaUrl: string }
+    | { id: number; blockType: 'QUIZ'; quiz: { quizId: number; questions: QuizQuestionResponse[] } }
+    | { id: number; blockType: 'FLASHCARD'; flashcards: FlashcardItemResponse[] }
   >;
 }
 
@@ -45,10 +71,11 @@ async function createChapter(courseId: number, draftState: ChapterDraftSnapshot)
     {
       title: draftState.chapterTitle,
       accessType: draftState.accessType,
+      isDraft: draftState.isDraft,
       ...(draftState.accessType === 'PROTECTED' ? { passcode: draftState.passcode } : {}),
     }
   );
-  return data.data.id;
+  return data.data.chapterId;
 }
 
 async function createPage(chapterId: number, page: PageDraft): Promise<number> {
@@ -56,7 +83,7 @@ async function createPage(chapterId: number, page: PageDraft): Promise<number> {
     `/chapters/${chapterId}/pages`,
     { title: page.title }
   );
-  return data.data.id;
+  return data.data.pageId;
 }
 
 async function uploadMediaAndGetObjectKey(
@@ -69,8 +96,6 @@ async function uploadMediaAndGetObjectKey(
   );
   const { uploadUrl, objectKey } = data.data;
 
-  // PUT thẳng lên MinIO - KHÔNG qua apiClient (khác origin, không cần Bearer token,
-  // không đi qua interceptor refresh-token).
   const uploadRes = await fetch(uploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': file.type },
@@ -84,6 +109,39 @@ async function uploadMediaAndGetObjectKey(
   return objectKey;
 }
 
+// ---------------------------------------------------------------------------
+// Payload cho FLASHCARD / QUIZ - dùng chung cho cả Create và Update (full-replace)
+// ---------------------------------------------------------------------------
+
+function buildFlashcardPayload(block: FlashcardBlockDraft) {
+  return {
+    blockType: 'FLASHCARD' as const,
+    // QUAN TRỌNG: DTO backend (BlockRequestDto.Flashcards) yêu cầu key "flashcards", KHÔNG PHẢI
+    // "cards" như api_contract.md cũ ghi. ASP.NET Core bind JSON không phân biệt hoa/thường nhưng
+    // không tự đổi tên trường - gửi "cards" sẽ luôn ra dto.Flashcards = null ở backend.
+    flashcards: block.items.map((item, index) => ({
+      frontText: item.frontText,
+      backText: item.backText,
+      orderIndex: index,
+    })),
+  };
+}
+
+function buildQuizPayload(block: QuizBlockDraft) {
+  return {
+    blockType: 'QUIZ' as const,
+    questions: block.questions.map((q, index) => ({
+      questionText: q.questionText,
+      explanation: q.explanation.trim() ? q.explanation : null,
+      orderIndex: index,
+      options: q.options.map((o) => ({
+        optionText: o.optionText,
+        isCorrect: o.isCorrect,
+      })),
+    })),
+  };
+}
+
 async function createBlock(pageId: number, block: BlockDraft): Promise<void> {
   if (block.blockType === 'TEXT') {
     await apiClient.post(`/pages/${pageId}/blocks`, {
@@ -93,12 +151,20 @@ async function createBlock(pageId: number, block: BlockDraft): Promise<void> {
     return;
   }
 
+  if (block.blockType === 'FLASHCARD') {
+    await apiClient.post(`/pages/${pageId}/blocks`, buildFlashcardPayload(block));
+    return;
+  }
+
+  if (block.blockType === 'QUIZ') {
+    await apiClient.post(`/pages/${pageId}/blocks`, buildQuizPayload(block));
+    return;
+  }
+
   if (!block.rawFile) {
     throw new Error(`Block ${block.blockType} chưa chọn file, không thể đăng.`);
   }
-
   const objectKey = await uploadMediaAndGetObjectKey(block.rawFile, block.blockType);
-
   await apiClient.post(`/pages/${pageId}/blocks`, {
     blockType: block.blockType,
     mediaObjectKey: objectKey,
@@ -130,6 +196,43 @@ export async function fetchChapterDetailReal(chapterId: number): Promise<Chapter
             contentText: b.contentText,
           };
         }
+
+        if (b.blockType === 'FLASHCARD') {
+          const flashcardBlock: FlashcardBlockDraft = {
+            blockTempId: crypto.randomUUID(),
+            blockId: b.id,
+            blockType: 'FLASHCARD',
+            items: b.flashcards.map((f) => ({
+              itemTempId: crypto.randomUUID(),
+              flashcardId: f.flashcardId,
+              frontText: f.frontText,
+              backText: f.backText,
+            })),
+          };
+          return flashcardBlock;
+        }
+
+        if (b.blockType === 'QUIZ') {
+          const quizBlock: QuizBlockDraft = {
+            blockTempId: crypto.randomUUID(),
+            blockId: b.id,
+            blockType: 'QUIZ',
+            questions: b.quiz.questions.map((q) => ({
+              questionTempId: crypto.randomUUID(),
+              questionId: q.questionId,
+              questionText: q.questionText,
+              explanation: q.explanation ?? '',
+              options: q.options.map((o) => ({
+                optionTempId: crypto.randomUUID(),
+                optionId: o.optionId,
+                optionText: o.optionText,
+                isCorrect: o.isCorrect,
+              })),
+            })),
+          };
+          return quizBlock;
+        }
+
         const mediaBlock: MediaBlockDraft = {
           blockTempId: crypto.randomUUID(),
           blockId: b.id,
@@ -153,6 +256,7 @@ export async function fetchChapterDetailReal(chapterId: number): Promise<Chapter
     chapterId: chapter.id,
     chapterTitle: chapter.title,
     accessType: chapter.accessType,
+    isDraft: chapter.isDraft,
     pages,
   };
 }
@@ -198,6 +302,12 @@ async function buildBlockPayload(block: BlockDraft) {
   if (block.blockType === 'TEXT') {
     return { blockType: 'TEXT' as const, contentText: block.contentText };
   }
+  if (block.blockType === 'FLASHCARD') {
+    return buildFlashcardPayload(block);
+  }
+  if (block.blockType === 'QUIZ') {
+    return buildQuizPayload(block);
+  }
   if (!block.rawFile) return null;
   const objectKey = await uploadMediaAndGetObjectKey(block.rawFile, block.blockType);
   return { blockType: block.blockType, mediaObjectKey: objectKey };
@@ -212,6 +322,7 @@ export async function updateChapterDraftReal(
   await apiClient.put(`/chapters/${chapterId}`, {
     title: draftState.chapterTitle,
     accessType: draftState.accessType,
+    isDraft: draftState.isDraft,
     ...(draftState.passcode.trim() ? { passcode: draftState.passcode } : {}),
   });
 
@@ -226,8 +337,8 @@ export async function updateChapterDraftReal(
 
     for (const block of page.blocks) {
       const payload = await buildBlockPayload(block);
-      if (!payload) continue; 
-      
+      if (!payload) continue;
+
       if (block.blockId) {
         await apiClient.put(`/blocks/${block.blockId}`, payload);
       } else {

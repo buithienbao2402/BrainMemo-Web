@@ -49,6 +49,14 @@ public class BlockController : ControllerBase
         {
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
     }
 
     [HttpDelete("{id}")]

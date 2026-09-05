@@ -51,10 +51,21 @@ export type AccessType = 'PUBLIC' | 'PRIVATE' | 'PROTECTED';
 
 export interface Chapter {
   id: number;
+  courseId: number;
   title: string;
   orderIndex: number;
   accessType: AccessType;
+  isDraft: boolean;        // MỚI
+  totalPages?: number;     // MỚI — optional, chỉ để hiển thị nếu cần
   createdAt: string;
+}
+
+export interface ChapterPayload {
+  title: string;
+  orderIndex: number;
+  accessType: AccessType;
+  passcode?: string;
+  isDraft: boolean;
 }
 
 /** GET /api/courses/{id} — dữ liệu đầy đủ 1 khóa học, dùng cho tab Tổng quan */

@@ -1,23 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { courseChaptersMockApi } from '../api/course-chapters.mock.api';
 import { courseChaptersApi } from '../api/course-chapters.api';
 
-// ==========================================
-// CÔNG TẮC API: True = Dùng Mock, False = Gọi API thật
-const USE_MOCK = true;
-// ==========================================
-
 export const courseChaptersKeys = {
-  list: (courseId: number) => ['courses', courseId, 'chapters'] as const,
+  list: (courseId: number, isDraft: boolean) => ['courses', courseId, 'chapters', isDraft] as const,
 };
 
-export function useCourseChapters(courseId: number) {
+export function useCourseChapters(courseId: number, isDraft: boolean) {
   return useQuery({
-    queryKey: courseChaptersKeys.list(courseId),
-    queryFn: () => 
-      USE_MOCK 
-        ? courseChaptersMockApi.getCourseChapters(courseId) 
-        : courseChaptersApi.getCourseChapters(courseId),
+    queryKey: courseChaptersKeys.list(courseId, isDraft),
+    queryFn: () => courseChaptersApi.getCourseChapters(courseId, isDraft),
     enabled: Number.isFinite(courseId),
   });
 }
@@ -26,12 +17,10 @@ export function useDeleteChapter(courseId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (chapterId: number) => 
-      USE_MOCK 
-        ? courseChaptersMockApi.deleteChapter(chapterId)
-        : courseChaptersApi.deleteChapter(chapterId),
+    mutationFn: (chapterId: number) => courseChaptersApi.deleteChapter(chapterId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseChaptersKeys.list(courseId) });
+      // Key rút gọn -> khớp tiền tố cả 2 query (isDraft=true và isDraft=false), invalidate 1 lần đủ cho cả 2 tab
+      queryClient.invalidateQueries({ queryKey: ['courses', courseId, 'chapters'] });
     },
   });
 }

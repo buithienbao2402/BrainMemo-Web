@@ -3,7 +3,7 @@ import { submitChapterDraftMock, updateChapterDraftMock } from '../api/chapter-b
 import { submitChapterDraftReal, updateChapterDraftReal } from '../api/chapter-builder.api';
 import type { ChapterDraftSnapshot } from '../store/chapterBuilderStore';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 interface SubmitChapterBuilderParams {
   mode: 'create' | 'edit';
