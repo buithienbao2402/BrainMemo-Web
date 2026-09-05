@@ -1,45 +1,89 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using WebHoTroHocTap.API.DTOs.Common;
-using WebHoTroHocTap.DataAccess;
+using WebHoTroHocTap.Business.DTOs.User;
+using WebHoTroHocTap.Business.Services;
 
 namespace WebHoTroHocTap.API.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize] // Bắt buộc có access token hợp lệ trong header Authorization
+[Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly AppDbContext _context;
-    public UsersController(AppDbContext context) => _context = context;
+    private readonly IUserService _userService;
 
-    [HttpGet("me")]
-    public async Task<IActionResult> GetMe()
+    public UsersController(IUserService userService)
     {
-        var userIdClaim = User.FindFirst("userId")?.Value;
-        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Token không hợp lệ." });
-        }
+        _userService = userService;
+    }
 
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null)
-        {
-            return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy người dùng." });
-        }
+    // Giữ nguyên endpoint me (hỗ trợ cả /api/users/me và /api/users/profile)
+    [HttpGet("me")]
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        int userId = GetCurrentUserId();
+        var profile = await _userService.GetProfileAsync(userId);
+        if (profile == null)
+            return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy người dùng" });
 
-        return Ok(new ApiResponse<object>
+        return Ok(new ApiResponse<UserProfileResponseDto>
         {
             Success = true,
-            Message = "Lấy thông tin thành công",
-            Data = new
-            {
-                userId = user.UserId,
-                email = user.Email,
-                fullName = user.FullName,
-                avatarUrl = user.AvatarUrl
-            }
+            Message = "Lấy hồ sơ người dùng thành công",
+            Data = profile
         });
     }
+
+    // Cập nhật thông tin cá nhân (họ tên, bio, avatar, cài đặt thông báo)
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDto dto)
+    {
+        int userId = GetCurrentUserId();
+        bool success = await _userService.UpdateProfileAsync(userId, dto);
+        if (!success)
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "Cập nhật hồ sơ thất bại" });
+
+        return Ok(new ApiResponse<object> { Success = true, Message = "Cập nhật thông tin thành công" });
+    }
+
+    // Cập nhật chế độ sáng/tối (LIGHT / DARK)
+    [HttpPatch("theme")]
+    public async Task<IActionResult> UpdateTheme([FromBody] UpdateThemeRequestDto dto)
+    {
+        int userId = GetCurrentUserId();
+        bool success = await _userService.UpdateThemeAsync(userId, dto.ThemeMode);
+        if (!success)
+            return BadRequest(new ApiResponse<object> { Success = false, Message = "Đổi giao diện thất bại" });
+
+        return Ok(new ApiResponse<object> { Success = true, Message = "Cập nhật giao diện thành công" });
+    }
+
+    // Đổi mật khẩu
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto dto)
+    {
+        try
+        {
+            int userId = GetCurrentUserId();
+            await _userService.ChangePasswordAsync(userId, dto);
+            return Ok(new ApiResponse<object> { Success = true, Message = "Đổi mật khẩu thành công" });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    // Đăng xuất và thu hồi Refresh Token
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequestDto? dto)
+    {
+        int userId = GetCurrentUserId();
+        await _userService.LogoutAsync(userId, dto?.RefreshToken);
+        return Ok(new ApiResponse<object> { Success = true, Message = "Đăng xuất thành công" });
+    }
+
+    private int GetCurrentUserId() => int.Parse(User.FindFirst("userId")!.Value);
 }
