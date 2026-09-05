@@ -103,7 +103,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
             <Group justify="space-between" align="flex-start" mb="md">
               <Title order={4}>Thông tin khóa học</Title>
               <Group gap={4}>
-                <ActionIcon variant="subtle" color="gray" aria-label="Xem trước khóa học">
+                <ActionIcon variant="subtle" color="gray" aria-label="Xem trước khóa học" onClick={() => navigate(`/courses/${course.id}`)}>
                   <IconEye size={16} />
                 </ActionIcon>
                 <ActionIcon

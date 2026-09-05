@@ -1,0 +1,178 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* Phép thuật Mantine v7: Sáng thì lấy #fbf2ec, Tối thì lấy màu xám đen của theme */
+  background-color: light-dark(#fbf2ec, var(--mantine-color-dark-8));
+}
+
+.headerGroup {
+  background-color: #1a1a1a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 32px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo {
+  height: 40px;
+  flex-shrink: 0;
+  transform: scale(1.9); /* Phóng to 1.5 lần */
+  transform-origin: left center;
+}
+
+.search {
+  flex: 1;
+  max-width: 500px;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background-color: var(--mantine-color-orange-6);
+  color: #000;
+  transition: opacity 0.2s;
+}
+
+.createButton:hover {
+  opacity: 0.9;
+}
+
+/* ĐÃ THÊM LẠI ĐỂ ÉP KÍCH THƯỚC ICON */
+.createIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.createLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.subtopbar {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.subtopbarInner {
+  display: flex;
+  align-items: center;
+  padding: 8px 32px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--mantine-color-orange-5);
+  transition: all 0.2s;
+}
+
+.navItem:hover {
+  background-color: rgba(232, 89, 12, 0.1);
+}
+
+.navItemActive {
+  background-color: rgba(232, 89, 12, 0.15);
+  color: var(--mantine-color-orange-6);
+}
+
+.navLabel {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.navIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.themeToggle {
+  color: var(--mantine-color-orange-5);
+  margin-left: 8px;
+}
+
+.themeToggle:hover {
+  background-color: rgba(232, 89, 12, 0.1);
+}
+
+.userName {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+  padding: 40px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.footer {
+  background-color: light-dark(#ffffff, var(--mantine-color-dark-7));
+  padding: 24px 0;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+}
+
+.footerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  font-size: 14px;
+  color: var(--mantine-color-gray-6);
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footerLogo {
+  height: 40px;
+  transform: scale(1.7); /* Phóng to ảnh lên 1.6 lần (có thể chỉnh 1.8 hoặc 2.0 tùy ý) */
+  transform-origin: left center; /* Bắt buộc: Neo giữ mép trái, chỉ cho ảnh nở ra về bên phải để không bị lẹm ra ngoài viền */
+  margin-right: 32px;
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f9e44;
+  display: inline-block;
+}
