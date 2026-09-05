@@ -1,17 +1,17 @@
-﻿namespace WebHoTroHocTap.API.DTOs.Block;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WebHoTroHocTap.Business.DTOs.Block;
 
 public class BlockRequestDto
 {
-    public string BlockType { get; set; } = "TEXT"; // TEXT, FLASHCARD, QUIZ
+    public string BlockType { get; set; } = "TEXT";
     public int OrderIndex { get; set; } = 1;
-
-    // Dành cho BlockType = TEXT
     public string? ContentText { get; set; }
-
-    // Dành cho BlockType = FLASHCARD
     public List<FlashcardItemDto>? Flashcards { get; set; }
-
-    // Dành cho BlockType = QUIZ
     public List<QuizQuestionDto>? Questions { get; set; }
 }
 

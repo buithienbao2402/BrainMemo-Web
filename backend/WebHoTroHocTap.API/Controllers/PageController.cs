@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebHoTroHocTap.API.DTOs.Common;
-using WebHoTroHocTap.API.DTOs.Page;
+using WebHoTroHocTap.Business.DTOs.Page;
 using WebHoTroHocTap.Business.Services;
 
 namespace WebHoTroHocTap.API.Controllers;

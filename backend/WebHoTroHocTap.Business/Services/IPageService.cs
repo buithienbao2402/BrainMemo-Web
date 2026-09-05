@@ -1,4 +1,4 @@
-﻿using WebHoTroHocTap.API.DTOs.Page;
+﻿using WebHoTroHocTap.Business.DTOs.Page;
 
 namespace WebHoTroHocTap.Business.Services;
 

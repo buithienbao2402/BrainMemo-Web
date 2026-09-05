@@ -1,4 +1,4 @@
-﻿using WebHoTroHocTap.API.DTOs.Block;
+﻿using WebHoTroHocTap.Business.DTOs.Block;
 
 namespace WebHoTroHocTap.Business.Services;
 

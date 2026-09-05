@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebHoTroHocTap.API.DTOs.Block;
+using WebHoTroHocTap.Business.DTOs.Block;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
 

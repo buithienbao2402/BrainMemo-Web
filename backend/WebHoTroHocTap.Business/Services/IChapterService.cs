@@ -1,4 +1,4 @@
-﻿using WebHoTroHocTap.API.DTOs.Chapter;
+﻿using WebHoTroHocTap.Business.DTOs.Chapter;
 
 namespace WebHoTroHocTap.Business.Services;
 
