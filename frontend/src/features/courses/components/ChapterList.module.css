@@ -1,0 +1,38 @@
+.item {
+  width: 100%;
+  padding: 10px 6px;
+  border-radius: 8px;
+}
+
+.item:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.badgeIndex,
+.badgeCurrent {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.badgeIndex {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-7);
+}
+
+.badgeCurrent {
+  background: var(--mantine-color-orange-6);
+  color: #fff;
+}
+
+.accessIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}

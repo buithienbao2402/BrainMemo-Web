@@ -152,7 +152,7 @@ export function ChapterList() {
                           variant="subtle"
                           color="gray"
                           aria-label="Xem chương"
-                          onClick={() => navigate(`/creator/chapters/${chapter.id}`)}
+                          onClick={() => navigate(`/courses/${courseId}/learn/${chapter.id}`)}
                         >
                           <IconEye size={16} />
                         </ActionIcon>

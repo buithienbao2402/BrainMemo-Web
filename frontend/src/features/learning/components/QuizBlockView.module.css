@@ -1,0 +1,38 @@
+/* File: src/features/learning/components/QuizBlockView.module.css */
+
+.wrapper {
+  border: 1px solid #2c2e33;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #1a1b1e;
+}
+
+.questionBox:last-child {
+  margin-bottom: 0;
+}
+
+.option {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #2c2e33;
+  background-color: #202124;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.option:hover {
+  border-color: #495057;
+}
+
+/* Tô xanh cho đáp án đúng sau khi nộp — luôn hiện dù chọn đúng hay sai */
+.optionCorrect {
+  border-color: #2f9e44;
+  background-color: rgba(47, 158, 68, 0.12);
+}
+
+/* Tô đỏ cho đáp án học viên chọn nhưng sai */
+.optionWrong {
+  border-color: #e03131;
+  background-color: rgba(224, 49, 49, 0.12);
+}
