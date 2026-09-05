@@ -1,10 +1,12 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using WebHoTroHocTap.DataAccess;
-using WebHoTroHocTap.Business.Services;
 using Microsoft.OpenApi.Models;
+using System.Text;
+using WebHoTroHocTap.API.Json;
+using WebHoTroHocTap.Business.Services;
+using WebHoTroHocTap.DataAccess;
+using WebHoTroHocTap.DataAccess.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +37,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // 4. Các dịch vụ mặc định của Web API
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new CaseInsensitiveEnumConverter<AccessType>());
+        options.JsonSerializerOptions.Converters.Add(new CaseInsensitiveEnumConverter<CourseStatus>());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

@@ -1,13 +1,15 @@
-import { useParams } from 'react-router-dom';
-import { Alert, Card, Skeleton, SimpleGrid, Stack, Tabs, Text } from '@mantine/core';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Alert, Card, Skeleton, SimpleGrid, Stack, Tabs } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import {
   useCourseDashboardStats,
   useCourseInvitations,
+  useCourseDetail,
 } from '../hooks/useCourseDetail';
 import { CourseOverviewTab } from '../components/CourseOverviewTab';
 import { useUIStore } from '@/stores/uiStore';
 import { CreateCourseModal } from '../components/CreateCourseModal';
+import { ChapterList } from '../components/ChapterList';
 
 /**
  * Trang "Quản lý chi tiết khóa học" (Creator).
@@ -19,15 +21,25 @@ export function CourseDetailDashboard() {
 
   const statsQuery = useCourseDashboardStats(courseId);
   const invitationsQuery = useCourseInvitations(courseId);
+  const courseQuery = useCourseDetail(courseId);
 
-  const isLoading = statsQuery.isLoading || invitationsQuery.isLoading;
-  const isError = statsQuery.isError || invitationsQuery.isError;
+  const navigate = useNavigate();
+
+  const isLoading = statsQuery.isLoading || invitationsQuery.isLoading || courseQuery.isLoading;
+  const isError = statsQuery.isError || invitationsQuery.isError || courseQuery.isError;
+
   const isCreateCourseModalOpen = useUIStore((s: any) => s.isCreateCourseModalOpen);
   const closeCreateCourseModal = useUIStore((s: any) => s.closeCreateCourseModal);
 
   return (
     <>
-      <Tabs defaultValue="overview" color="orange">
+      <Tabs defaultValue="overview" color="orange"
+      onChange={(value) => {
+          if (value === 'new-chapter') {
+            navigate(`/creator/courses/${courseId}/chapters/new`);
+          }
+        }}
+        >
         <Tabs.List>
           <Tabs.Tab value="overview">Tổng quan khóa học</Tabs.Tab>
           <Tabs.Tab value="chapters">Danh sách chương</Tabs.Tab>
@@ -47,8 +59,9 @@ export function CourseDetailDashboard() {
 
           {!isError && isLoading && <CourseOverviewSkeleton />}
 
-          {!isError && !isLoading && statsQuery.data && (
+          {!isError && !isLoading && statsQuery.data && courseQuery.data && (
             <CourseOverviewTab
+              course={courseQuery.data}
               stats={statsQuery.data}
               invitations={invitationsQuery.data ?? []}
             />
@@ -56,15 +69,7 @@ export function CourseDetailDashboard() {
         </Tabs.Panel>
 
         <Tabs.Panel value="chapters" pt="lg">
-          <Text c="dimmed" size="sm">
-            Danh sách chương — nằm ngoài phạm vi nhiệm vụ hiện tại.
-          </Text>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="new-chapter" pt="lg">
-          <Text c="dimmed" size="sm">
-            Thêm chương mới — nằm ngoài phạm vi nhiệm vụ hiện tại.
-          </Text>
+          <ChapterList />
         </Tabs.Panel>
       </Tabs>
 

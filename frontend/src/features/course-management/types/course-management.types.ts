@@ -19,6 +19,7 @@ export interface CreateCoursePayload {
   description: string;
   coverImageObjectKey: string;
   accessType: AccessType;
+  status?: CourseStatus;
   passcode?: string;
   tags: string[];
 }

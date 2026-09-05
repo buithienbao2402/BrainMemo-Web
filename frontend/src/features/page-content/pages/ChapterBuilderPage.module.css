@@ -1,0 +1,92 @@
+.titleInput input {
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding-left: 0;
+}
+
+.optionCard {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.optionCardActive {
+  border-color: var(--mantine-color-brand-6);
+  background: var(--mantine-color-brand-light);
+}
+
+.pageTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pageTabScroll {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.5rem;
+}
+
+.pageTabScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.pageTab {
+  flex-shrink: 0;
+  padding: 0.4rem 0.1rem;
+  font-size: 0.85rem;
+  color: var(--mantine-color-dimmed);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.pageTabActive {
+  color: var(--mantine-color-brand-6);
+  font-weight: 600;
+  border-bottom-color: var(--mantine-color-brand-6);
+}
+
+.pill {
+  border: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+}
+
+.pillActive {
+  border-color: var(--mantine-color-green-6);
+  background: var(--mantine-color-green-light);
+  color: var(--mantine-color-green-7);
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 120px;
+  border: 1.5px dashed var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  background: var(--mantine-color-gray-0);
+  transition: border-color 0.15s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--mantine-color-brand-6);
+}
+
+.pageTitleInput input {
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding-left: 0;
+}

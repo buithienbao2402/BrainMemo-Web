@@ -1,6 +1,7 @@
+import type { CourseStatus } from './course-management.types';
+
 /**
  * Types cho màn hình "Quản lý chi tiết khóa học" (Creator).
- * Bám sát API Contract — mục 5 (Course) và mục 6 (Enrollment & Lời mời).
  */
 
 /**
@@ -44,4 +45,32 @@ export interface CourseInvitation {
   status: InvitationStatus;
   createdAt: string; // ISO datetime string
   respondedAt: string | null;
+}
+
+export type AccessType = 'PUBLIC' | 'PRIVATE' | 'PROTECTED';
+
+export interface Chapter {
+  id: number;
+  title: string;
+  orderIndex: number;
+  accessType: AccessType;
+  createdAt: string;
+}
+
+/** GET /api/courses/{id} — dữ liệu đầy đủ 1 khóa học, dùng cho tab Tổng quan */
+export interface CourseDetail {
+  courseId: number;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  accessType: AccessType;
+  status: CourseStatus;
+  creator: {
+    userId: number;
+    fullName: string;
+    avatarUrl: string | null;
+  };
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }

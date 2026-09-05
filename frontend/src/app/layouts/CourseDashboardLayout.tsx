@@ -3,7 +3,7 @@ import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
-// Đặt 3 file ảnh này vào src/assets/ đúng tên (đổi lại import nếu tên khác).
+
 import logoUrl from '@/assets/brainmemo-logo-dark.png';
 import dashboardIconUrl from '@/assets/brainmemo-course-management-topbar-icon.png';
 import logoFooterUrl from '@/assets/brainmemo-logo-orange.png';
@@ -47,7 +47,7 @@ export function CourseDashboardLayout({ children }: CourseDashboardLayoutProps) 
 
         <div className={classes.footerRight}>
           <span className={classes.liveDot} />
-          Đang có 1.204 người đọc
+          Đang có 0 người đọc
         </div>
       </footer>
     </div>
