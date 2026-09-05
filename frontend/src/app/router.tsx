@@ -44,6 +44,11 @@ export function AppRouter() {
         element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />} 
       />
 
+      <Route 
+        path="/creator/courses/:courseId/chapters/:chapterId/edit" 
+        element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />} 
+      />
+
       {/* Route dự phòng: Bấm bậy bạ thì văng về Dashboard (rồi Dashboard sẽ tự check login) */}
       <Route path="*" element={<Navigate to="/creator/dashboard" replace />} />
     </Routes>
