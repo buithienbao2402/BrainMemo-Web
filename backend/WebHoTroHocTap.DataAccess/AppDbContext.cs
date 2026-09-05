@@ -67,6 +67,9 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<Chapter>(entity =>
         {
+            entity.Property(e => e.IsDraft)
+                .HasDefaultValue(false)
+                .HasColumnName("is_draft");
             entity.HasKey(e => e.ChapterId).HasName("PRIMARY");
             entity.ToTable("chapter");
             entity.HasIndex(e => e.CourseId, "idx_chapter_course");
