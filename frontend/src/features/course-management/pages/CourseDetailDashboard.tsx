@@ -4,6 +4,7 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import {
   useCourseDashboardStats,
   useCourseInvitations,
+  useCourseDetail,
 } from '../hooks/useCourseDetail';
 import { CourseOverviewTab } from '../components/CourseOverviewTab';
 import { useUIStore } from '@/stores/uiStore';
@@ -20,10 +21,13 @@ export function CourseDetailDashboard() {
 
   const statsQuery = useCourseDashboardStats(courseId);
   const invitationsQuery = useCourseInvitations(courseId);
+  const courseQuery = useCourseDetail(courseId);
+
   const navigate = useNavigate();
 
-  const isLoading = statsQuery.isLoading || invitationsQuery.isLoading;
-  const isError = statsQuery.isError || invitationsQuery.isError;
+  const isLoading = statsQuery.isLoading || invitationsQuery.isLoading || courseQuery.isLoading;
+  const isError = statsQuery.isError || invitationsQuery.isError || courseQuery.isError;
+
   const isCreateCourseModalOpen = useUIStore((s: any) => s.isCreateCourseModalOpen);
   const closeCreateCourseModal = useUIStore((s: any) => s.closeCreateCourseModal);
 
@@ -55,8 +59,9 @@ export function CourseDetailDashboard() {
 
           {!isError && isLoading && <CourseOverviewSkeleton />}
 
-          {!isError && !isLoading && statsQuery.data && (
+          {!isError && !isLoading && statsQuery.data && courseQuery.data && (
             <CourseOverviewTab
+              course={courseQuery.data}
               stats={statsQuery.data}
               invitations={invitationsQuery.data ?? []}
             />

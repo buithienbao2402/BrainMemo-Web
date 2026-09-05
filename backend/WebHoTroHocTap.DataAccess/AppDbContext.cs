@@ -128,6 +128,7 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.Status, "idx_course_status");
             entity.Property(e => e.CourseId).HasColumnName("course_id");
             entity.Property(e => e.AccessType)
+                .HasConversion<string>()
                 .HasDefaultValueSql("'PUBLIC'")
                 .HasColumnType("enum('PUBLIC','PRIVATE','PROTECTED')")
                 .HasColumnName("access_type");
@@ -146,6 +147,7 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("passcode");
             entity.Property(e => e.Status)
+                .HasConversion<string>()
                 .HasDefaultValueSql("'UPDATING'")
                 .HasColumnType("enum('PAUSED','COMPLETED','UPDATING')")
                 .HasColumnName("status");

@@ -31,6 +31,8 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useCreateCourse, useUpdateCourse, useDeleteCourse } from '../hooks/useCourseManagement';
+import { notifications } from '@mantine/notifications';
 
 type AccessType = 'PUBLIC' | 'PRIVATE' | 'PROTECTED';
 type CourseStatus = 'PAUSED' | 'COMPLETED' | 'UPDATING';
@@ -92,6 +94,10 @@ function revokeIfBlobUrl(url: string | null) {
 export function CreateCourseModal({ opened, onClose, course, onDeleted }: CreateCourseModalProps) {
   const user = useAuthStore((s) => s.user);
   const isEditMode = Boolean(course);
+
+  const { mutate: createCourse } = useCreateCourse();
+  const { mutate: updateCourse } = useUpdateCourse(course?.id ?? '');
+  const { mutate: deleteCourseMutation } = useDeleteCourse();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -197,29 +203,86 @@ export function CreateCourseModal({ opened, onClose, course, onDeleted }: Create
 
   const handleSubmit = form.onSubmit((values) => {
     setIsSubmitting(true);
-    // TODO: thay bằng useMutation (react-query):
-    //  - Tạo mới: POST /api/courses
-    //  - Chỉnh sửa: PUT /api/courses/{course.id}
-    const payload = isEditMode ? { id: course!.id, ...values } : values;
-    void new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
-      console.log('Submitting course payload:', payload);
-      setIsSubmitting(false);
-      form.reset();
-      clearCover();
-      onClose();
-    });
+
+    if (isEditMode) {
+      updateCourse(
+        {
+          title: values.title,
+          description: values.description,
+          coverImageObjectKey: values.coverImageObjectKey,
+          accessType: values.accessType,
+          status: values.status,
+          passcode: values.accessType === 'PROTECTED' && values.passcode.trim() ? values.passcode : undefined,
+          tags: values.tags,
+        },
+        {
+          onSuccess: () => {
+            notifications.show({ title: 'Thành công', message: 'Đã cập nhật khóa học.', color: 'green' });
+            setIsSubmitting(false);
+            form.reset();
+            clearCover();
+            onClose();
+          },
+          onError: (error) => {
+            notifications.show({ title: 'Có lỗi xảy ra', message: 'Không thể cập nhật khóa học.', color: 'red' });
+            console.error(error);
+            setIsSubmitting(false);
+          },
+        }
+      );
+      return;
+    }
+
+    createCourse(
+      {
+        title: values.title,
+        description: values.description,
+        coverImageObjectKey: values.coverImageObjectKey,
+        accessType: values.accessType,
+        passcode: values.accessType === 'PROTECTED' ? values.passcode : undefined,
+        tags: values.tags,
+      },
+      {
+        onSuccess: () => {
+          notifications.show({
+            title: 'Thành công',
+            message: 'Đã tạo khóa học mới.',
+            color: 'green',
+          });
+          setIsSubmitting(false);
+          form.reset();
+          clearCover();
+          onClose();
+        },
+        onError: (error) => {
+          notifications.show({
+            title: 'Có lỗi xảy ra',
+            message: 'Không thể tạo khóa học. Vui lòng thử lại.',
+            color: 'red',
+          });
+          console.error(error);
+          setIsSubmitting(false);
+        },
+      }
+    );
   });
 
   const handleDelete = () => {
     if (!course) return;
     setIsDeleting(true);
-    // TODO: thay bằng useMutation (react-query) gọi DELETE /api/courses/{course.id}
-    void new Promise((resolve) => setTimeout(resolve, 800)).then(() => {
-      console.log('Deleting course:', course.id);
-      setIsDeleting(false);
-      setDeleteConfirmOpen(false);
-      onDeleted?.(course.id);
-      onClose();
+    deleteCourseMutation(course.id, {
+      onSuccess: () => {
+        notifications.show({ title: 'Đã xóa', message: `Đã xóa khóa học "${course.title}".`, color: 'green' });
+        setIsDeleting(false);
+        setDeleteConfirmOpen(false);
+        onDeleted?.(course.id);
+        onClose();
+      },
+      onError: (error) => {
+        notifications.show({ title: 'Có lỗi xảy ra', message: 'Không thể xóa khóa học.', color: 'red' });
+        console.error(error);
+        setIsDeleting(false);
+      },
     });
   };
 
@@ -264,9 +327,8 @@ export function CreateCourseModal({ opened, onClose, course, onDeleted }: Create
               onDragLeave={() => setIsDragOver(false)}
               onDrop={isSubmitting ? undefined : handleDrop}
               style={{
-                border: `1px dashed ${
-                  isDragOver ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-default-border)'
-                }`,
+                border: `1px dashed ${isDragOver ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-default-border)'
+                  }`,
                 borderRadius: 'var(--mantine-radius-md)',
                 backgroundColor: isDragOver ? 'var(--mantine-color-orange-light)' : 'var(--mantine-color-body)',
                 cursor: isSubmitting ? 'default' : 'pointer',
