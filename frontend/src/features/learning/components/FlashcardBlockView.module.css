@@ -1,0 +1,37 @@
+/* File: src/features/learning/components/FlashcardBlockView.module.css */
+
+.scene {
+  perspective: 1200px; /* Tạo chiều sâu 3D cho hiệu ứng lật */
+  cursor: pointer;
+  user-select: none;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  min-height: 160px;
+  transform-style: preserve-3d; /* Bắt buộc để 2 mặt front/back nằm đúng vị trí 3D */
+  transition: transform 0.5s ease; /* Tốc độ lật mượt */
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden; /* Ẩn mặt sau khi chưa xoay tới, tránh hiện chữ ngược */
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #2c2e33;
+}
+
+.front {
+  background-color: #1a1b1e;
+}
+
+.back {
+  background-color: #24262b;
+  transform: rotateY(180deg); /* Mặt sau xoay sẵn 180deg để khi .card lật thì hiện đúng chiều */
+}

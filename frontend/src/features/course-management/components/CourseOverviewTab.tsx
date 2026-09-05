@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Anchor,
   Avatar,
@@ -28,17 +28,15 @@ import {
 import type {
   CourseDashboardStats,
   CourseInvitation,
-  CourseDetail,
 } from '../types/course-detail.types';
 import { CreateCourseModal, type CourseRecord } from '../components/CreateCourseModal';
 
 interface CourseOverviewTabProps {
-  course: CourseDetail;
   stats: CourseDashboardStats;
   invitations: CourseInvitation[];
 }
 
-/** Thông tin cũ (trước khi xóa mock data):
+/**
  * Thông tin mô tả khóa học (tiêu đề, giảng viên, trạng thái, quyền truy cập, ngày tạo).
  * GET /api/courses/{id}/dashboard KHÔNG trả các field này — chúng thuộc
  * GET /api/courses/{id}, nằm ngoài phạm vi 2 API được giao cho tab này.
@@ -49,37 +47,42 @@ interface CourseOverviewTabProps {
  * khi nối GET /api/courses/{id} thật, chỉ cần thay object này bằng data từ hook, phần logic mở
  * modal Sửa bên dưới không cần đổi gì thêm.
  */
+const COURSE_META = {
+  title: 'Nhập Môn Python - Từ Zero tới Hero',
+  description: '', // TODO: chưa có trong bất kỳ API nào ở tab này — thay bằng data thật khi có
+  instructorName: 'Thầy Code Dạo',
+  statusLabel: 'Đang ra',
+  status: 'UPDATING' as const, // TODO: map đúng theo status thật (PAUSED | COMPLETED | UPDATING) khi có API
+  accessLabel: 'Private',
+  accessType: 'PRIVATE' as const,
+  coverImageUrl: null as string | null,
+  tags: [] as string[],
+  createdAt: '2023-10-20T00:00:00.000Z',
+};
 
-export function CourseOverviewTab({ course, stats, invitations }: CourseOverviewTabProps) {
+function formatDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('vi-VN').format(new Date(isoDate));
+}
+
+export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps) {
   // Route: /creator/courses/:id — tab này không nhận courseId qua props nên lấy thẳng từ URL.
-
+  const { id: courseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const STATUS_LABELS: Record<CourseDetail['status'], string> = {
-    UPDATING: 'Đang ra',
-    PAUSED: 'Tạm dừng',
-    COMPLETED: 'Đã hoàn thành',
-  };
-
-  const ACCESS_LABELS: Record<CourseDetail['accessType'], string> = {
-    PUBLIC: 'Public',
-    PRIVATE: 'Private',
-    PROTECTED: 'Protected',
-  };
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseRecord | null>(null);
 
   const handleOpenEdit = () => {
+    if (!courseId) return;
     setEditingCourse({
-      id: String(course.courseId),
-      title: course.title,
-      description: course.description ?? '',
-      coverImageUrl: course.coverImageUrl,
-      tags: course.tags,
-      accessType: course.accessType,
-      status: course.status,
-      createdAt: course.createdAt,
+      id: courseId,
+      title: COURSE_META.title,
+      description: COURSE_META.description,
+      coverImageUrl: COURSE_META.coverImageUrl,
+      tags: COURSE_META.tags,
+      accessType: COURSE_META.accessType,
+      status: COURSE_META.status,
+      createdAt: COURSE_META.createdAt,
     });
     setIsCourseModalOpen(true);
   };
@@ -103,7 +106,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
             <Group justify="space-between" align="flex-start" mb="md">
               <Title order={4}>Thông tin khóa học</Title>
               <Group gap={4}>
-                <ActionIcon variant="subtle" color="gray" aria-label="Xem trước khóa học">
+                <ActionIcon variant="subtle" color="gray" aria-label="Xem trước khóa học" onClick={() => navigate(`/courses/${courseId}`)}>
                   <IconEye size={16} />
                 </ActionIcon>
                 <ActionIcon
@@ -116,29 +119,29 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                 </ActionIcon>
               </Group>
             </Group>
-
+  
             <Group align="flex-start" wrap="nowrap">
               <ThemeIcon size={56} radius="md" color="orange" variant="light">
                 <IconBrandPython size={30} />
               </ThemeIcon>
-
+  
               <Stack gap={4} style={{ flex: 1 }}>
-                <Text fw={600}>{course.title}</Text>
+                <Text fw={600}>{COURSE_META.title}</Text>
                 <Text size="sm" c="dimmed">
-                  Bởi {course.creator.fullName}
+                  Bởi {COURSE_META.instructorName}
                 </Text>
               </Stack>
             </Group>
-
+  
             <Divider my="md" />
-
+  
             <Stack gap="xs">
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">
                   Trạng thái:
                 </Text>
                 <Badge color="teal" variant="light">
-                  {STATUS_LABELS[course.status]}
+                  {COURSE_META.statusLabel}
                 </Badge>
               </Group>
               <Group justify="space-between">
@@ -146,18 +149,18 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                   Quyền truy cập:
                 </Text>
                 <Badge color="orange" variant="light" leftSection={<IconLock size={12} />}>
-                  {ACCESS_LABELS[course.accessType]}
+                  {COURSE_META.accessLabel}
                 </Badge>
               </Group>
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">
                   Ngày tạo:
                 </Text>
-                <Text size="sm">{course.createdAt}</Text>
+                <Text size="sm">{formatDate(COURSE_META.createdAt)}</Text>
               </Group>
             </Stack>
           </Card>
-
+  
           {/* Cột giữa: 2 card thống kê */}
           <Stack gap="lg">
             <Card withBorder radius="md" padding="lg" style={{ flex: 1 }}>
@@ -177,7 +180,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               </Text>
             </Card>
           </Stack>
-
+  
           {/* Cột phải: tỷ lệ hoàn thành */}
           <Card
             withBorder
@@ -203,7 +206,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
             </Stack>
           </Card>
         </SimpleGrid>
-
+  
         {/* Danh sách học viên (lời mời đang chờ + học viên đã tham gia) */}
         <Card withBorder radius="md" padding="lg">
           <Group justify="space-between" mb="md">
@@ -212,7 +215,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               Thêm học viên
             </Button>
           </Group>
-
+  
           {invitations.length > 0 && (
             <>
               <Stack gap="sm">
@@ -238,7 +241,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               <Divider my="sm" />
             </>
           )}
-
+  
           {stats.students.length === 0 ? (
             <Text size="sm" c="dimmed">
               Chưa có học viên nào tham gia khóa học này.
@@ -253,7 +256,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                   Tiến độ
                 </Text>
               </Group>
-
+  
               {stats.students.map((student) => (
                 <Group key={student.userId} wrap="nowrap">
                   <Avatar src={student.avatarUrl ?? undefined} radius="xl" color="orange">
@@ -278,7 +281,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               ))}
             </Stack>
           )}
-
+  
           <Group justify="flex-end" mt="md">
             <Anchor component="button" type="button" size="sm" c="orange">
               Xem tất cả
@@ -291,7 +294,6 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
         opened={isCourseModalOpen}
         onClose={handleCloseCourseModal}
         course={editingCourse}
-        onDeleted={() => navigate('/creator/dashboard')} // điều hướng ra ngoài vì course đã bị xóa, ở lại trang sẽ 404
       />
     </>
   );
