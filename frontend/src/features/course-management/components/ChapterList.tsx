@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconEye, IconTrash, IconWorld, IconLock, IconFileOff } from '@tabler/icons-react';
+import { IconEye, IconTrash, IconWorld, IconLock, IconFileOff, IconPencil } from '@tabler/icons-react';
 import { useCourseChapters, useDeleteChapter } from '../hooks/useCourseChapters';
 import type { Chapter } from '../types/course-detail.types';
 
@@ -122,7 +122,7 @@ export function ChapterList() {
                   <Table.Th>Tên chương</Table.Th>
                   <Table.Th w={120}>Truy cập</Table.Th>
                   <Table.Th w={140}>Ngày đăng</Table.Th>
-                  <Table.Th w={100}>Thao tác</Table.Th>
+                  <Table.Th w={120} ta="center" >Thao tác</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -147,7 +147,7 @@ export function ChapterList() {
                       </Text>
                     </Table.Td>
                     <Table.Td>
-                      <Group gap={6}>
+                      <Group gap={6} wrap="nowrap" justify="center">
                         <ActionIcon
                           variant="subtle"
                           color="gray"
@@ -155,6 +155,15 @@ export function ChapterList() {
                           onClick={() => navigate(`/creator/chapters/${chapter.id}`)}
                         >
                           <IconEye size={16} />
+                        </ActionIcon>
+
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          aria-label="Sửa chương"
+                          onClick={() => navigate(`/creator/courses/${courseId}/chapters/${chapter.id}/edit`)}
+                        >
+                          <IconPencil size={16} />
                         </ActionIcon>
                         <ActionIcon
                           variant="subtle"

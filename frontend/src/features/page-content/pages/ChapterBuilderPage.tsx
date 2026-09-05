@@ -12,9 +12,11 @@ import {
   Box,
   Button,
   Card,
+  Center,
   Checkbox,
   Container,
   Group,
+  Loader,
   SimpleGrid,
   Stack,
   Text,
@@ -54,6 +56,7 @@ import {
   type TextBlockDraft,
 } from '../store/chapterBuilderStore';
 import { useSubmitChapterBuilder } from '../hooks/useSubmitChapterBuilder';
+import { useFetchChapterDetail } from '../hooks/useFetchChapterDetail';
 import classes from './ChapterBuilderPage.module.css';
 
 const ACCESS_OPTIONS: Array<{
@@ -443,8 +446,16 @@ function PageTabs({
 // ---------- Main page ----------
 
 export default function ChapterBuilderPage() {
-  const { id } = useParams<{ id: string }>();
-  const courseId = Number(id);
+  // Tạo mới: /creator/courses/:courseId/chapters/new
+  // Sửa:    /creator/courses/:courseId/chapters/:chapterId/edit
+  // -> có chapterId trên URL nghĩa là đang ở luồng Sửa.
+  const { courseId: courseIdParam, chapterId: chapterIdParam } = useParams<{
+    courseId: string;
+    chapterId?: string;
+  }>();
+  const courseId = Number(courseIdParam);
+  const chapterId = chapterIdParam ? Number(chapterIdParam) : null;
+  const isEditMode = chapterId !== null;
   const navigate = useNavigate();
 
   const chapterTitle = useChapterBuilderStore((s) => s.chapterTitle);
@@ -452,15 +463,54 @@ export default function ChapterBuilderPage() {
   const passcode = useChapterBuilderStore((s) => s.passcode);
   const pages = useChapterBuilderStore((s) => s.pages);
   const activePageTempId = useChapterBuilderStore((s) => s.activePageTempId);
+  const removedPageIds = useChapterBuilderStore((s) => s.removedPageIds);
+  const removedBlockIds = useChapterBuilderStore((s) => s.removedBlockIds);
   const updateChapterInfo = useChapterBuilderStore((s) => s.updateChapterInfo);
   const addBlock = useChapterBuilderStore((s) => s.addBlock);
   const removePage = useChapterBuilderStore((s) => s.removePage);
   const resetStore = useChapterBuilderStore((s) => s.resetStore);
+  const hydrateFromServer = useChapterBuilderStore((s) => s.hydrateFromServer);
 
   const { mutate: submitChapter, isPending } = useSubmitChapterBuilder();
+  const {
+    data: chapterDetail,
+    isLoading: isLoadingChapterDetail,
+    isError: isChapterDetailError,
+  } = useFetchChapterDetail(chapterId);
 
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [stubBlocksByPage, setStubBlocksByPage] = useState<Record<string, StubBlock[]>>({});
+
+  // Chỉ hydrate 1 lần cho mỗi chapterId, tránh việc query refetch ngầm ghi đè bản nháp Creator đang soạn dở.
+  const hasHydratedRef = useRef(false);
+  // Ghi nhớ accessType gốc lúc mới vào Sửa, để biết chương đã PROTECTED sẵn hay Creator mới đổi sang
+  // (quyết định có bắt buộc nhập mật mã mới hay cho phép để trống = giữ mật mã cũ).
+  const originalAccessTypeRef = useRef<AccessType | null>(null);
+
+  // Đảm bảo mỗi lần vào trang (Tạo mới hoặc Sửa 1 chapterId khác) đều xuất phát từ store sạch,
+  // tránh dính dữ liệu còn sót của phiên trước (vd Creator vừa Sửa chương A xong bấm sang Sửa chương B).
+  useEffect(() => {
+    resetStore();
+    hasHydratedRef.current = false;
+  }, [courseId, chapterId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isEditMode && chapterDetail && !hasHydratedRef.current) {
+      hydrateFromServer(chapterDetail);
+      originalAccessTypeRef.current = chapterDetail.accessType;
+      hasHydratedRef.current = true;
+    }
+  }, [isEditMode, chapterDetail, hydrateFromServer]);
+
+  useEffect(() => {
+    if (isChapterDetailError) {
+      notifications.show({
+        title: 'Không tải được chương',
+        message: 'Có lỗi khi lấy dữ liệu chương để sửa. Vui lòng quay lại và thử lại.',
+        color: 'red',
+      });
+    }
+  }, [isChapterDetailError]);
 
   const activePage = pages.find((p) => p.pageTempId === activePageTempId) ?? pages[0] ?? null;
   const activePageIndex = activePage ? pages.indexOf(activePage) : -1;
@@ -506,6 +556,14 @@ export default function ChapterBuilderPage() {
     }));
   };
 
+  if (isEditMode && isLoadingChapterDetail) {
+    return (
+      <Center h="60vh">
+        <Loader />
+      </Center>
+    );
+  }
+
   const handleSaveDraft = () => {
     // Chưa có API lưu nháp trong contract -> state đã nằm sẵn trong Zustand suốt phiên làm việc,
     // đây tạm thời chỉ là xác nhận UX. Nối API khi Backend bổ sung endpoint.
@@ -531,7 +589,12 @@ export default function ChapterBuilderPage() {
       });
       return;
     }
-    if (accessType === 'PROTECTED' && !passcode.trim()) {
+    // Luồng Sửa: nếu chương vốn đã PROTECTED từ trước và Creator để trống ô mật mã -> hiểu là giữ
+    // nguyên mật mã cũ (BE không trả mật mã thật khi GET). Chỉ bắt buộc nhập mật mã mới khi Tạo mới,
+    // hoặc khi Creator vừa đổi từ PUBLIC/PRIVATE sang PROTECTED trong lúc Sửa.
+    const isSwitchingToProtected = isEditMode && originalAccessTypeRef.current !== 'PROTECTED';
+    const passcodeRequired = accessType === 'PROTECTED' && (!isEditMode || isSwitchingToProtected);
+    if (passcodeRequired && !passcode.trim()) {
       notifications.show({
         title: 'Thiếu mật mã',
         message: 'Chương ở chế độ Khóa mật mã cần nhập mật mã truy cập.',
@@ -549,11 +612,18 @@ export default function ChapterBuilderPage() {
     }
 
     submitChapter(
-      { courseId, draftState: { chapterTitle, accessType, passcode, pages } },
+      {
+        mode: isEditMode ? 'edit' : 'create',
+        courseId,
+        chapterId,
+        draftState: { chapterTitle, accessType, passcode, pages },
+        removedPageIds,
+        removedBlockIds,
+      },
       {
         onSuccess: () => {
           notifications.show({
-            title: 'Đăng chương thành công',
+            title: isEditMode ? 'Cập nhật chương thành công' : 'Đăng chương thành công',
             message: chapterTitle,
             color: 'green',
           });
@@ -562,8 +632,10 @@ export default function ChapterBuilderPage() {
         },
         onError: () => {
           notifications.show({
-            title: 'Đăng chương thất bại',
-            message: 'Có lỗi khi tạo chương. Bản nháp vẫn được giữ nguyên, thử lại nhé.',
+            title: isEditMode ? 'Cập nhật chương thất bại' : 'Đăng chương thất bại',
+            message: isEditMode
+              ? 'Có lỗi khi lưu thay đổi. Bản nháp vẫn được giữ nguyên, thử lại nhé.'
+              : 'Có lỗi khi tạo chương. Bản nháp vẫn được giữ nguyên, thử lại nhé.',
             color: 'red',
           });
         },
@@ -589,7 +661,7 @@ export default function ChapterBuilderPage() {
             Lưu nháp
           </Button>
           <Button loading={isPending} onClick={handlePublish}>
-            Đăng chương
+            {isEditMode ? 'Lưu thay đổi' : 'Đăng chương'}
           </Button>
         </Group>
       </Group>
@@ -642,7 +714,12 @@ export default function ChapterBuilderPage() {
           {accessType === 'PROTECTED' && (
             <PasswordInput
               label="Mật mã truy cập"
-              placeholder="Nhập mật mã..."
+              placeholder={isEditMode ? 'Để trống nếu giữ nguyên mật mã cũ' : 'Nhập mật mã...'}
+              description={
+                isEditMode && originalAccessTypeRef.current === 'PROTECTED'
+                  ? 'Để trống nếu không muốn đổi mật mã hiện tại.'
+                  : undefined
+              }
               value={passcode}
               onChange={(e) => updateChapterInfo({ passcode: e.currentTarget.value })}
               maw={360}
