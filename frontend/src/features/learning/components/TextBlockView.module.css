@@ -1,0 +1,25 @@
+/* File: src/features/learning/components/TextBlockView.module.css */
+
+.codeBlock {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #2c2e33;
+  background-color: #1a1b1e; /* Nền tối cho toàn khối code */
+}
+
+.codeHeader {
+  padding: 6px 12px;
+  background-color: #202124; /* Header đậm hơn nhẹ để phân tách với phần code */
+  border-bottom: 1px solid #2c2e33;
+}
+
+.codePre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto; /* Code dài cuộn ngang, không phá layout dọc của <main> */
+  font-family: 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a5d6a7; /* Tông xanh lá nhạt giống theme editor tối, dễ đọc trên nền đen */
+  white-space: pre;
+}
