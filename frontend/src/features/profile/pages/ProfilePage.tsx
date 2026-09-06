@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Paper, Avatar, TextInput, Textarea, Button, Stack, Group, FileButton, PasswordInput, Divider, Loader, Center } from '@mantine/core';
+import { Paper, TextInput, Textarea, Button, Stack, Group, FileButton, PasswordInput, Divider, Loader, Center } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useMyProfile, useUpdateProfile, useChangePassword } from '../hooks/useProfile';
 import { getPresignedUrl, uploadToMinio } from '../api/profile.api';
+import { UserAvatar } from '@/shared/components/UserAvatar';
 
 export function ProfilePage() {
   const { data: profile, isLoading } = useMyProfile();
@@ -66,7 +67,7 @@ export function ProfilePage() {
       <Paper shadow="sm" radius="md" p="lg">
         <Stack gap="md">
           <Group>
-            <Avatar src={avatarPreview} size={80} radius="xl" color="orange">{fullName.charAt(0)}</Avatar>
+            <UserAvatar fullName={fullName} avatarUrl={avatarPreview} size={80} />
             <FileButton onChange={handleAvatarChange} accept="image/png,image/jpeg,image/webp">
               {(props) => <Button {...props} variant="light" loading={uploading}>Đổi ảnh đại diện</Button>}
             </FileButton>

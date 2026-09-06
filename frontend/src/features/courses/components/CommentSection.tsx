@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Avatar, Button, Group, Paper, Stack, Text, TextInput, Loader, Center } from '@mantine/core';
+import { Button, Group, Paper, Stack, Text, TextInput, Loader, Center } from '@mantine/core';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useComments, usePostComment } from '../hooks/useComments';
 import { CommentItem } from './CommentItem';
+import { UserAvatar } from '@/shared/components/UserAvatar';
 
 export function CommentSection({ courseId }: { courseId: number }) {
   const { user } = useAuthStore();
@@ -21,7 +22,7 @@ export function CommentSection({ courseId }: { courseId: number }) {
       <Text fw={700} mb="sm">THẢO LUẬN ({data?.totalItems ?? 0})</Text>
 
       <Group align="center" gap="sm" mb="lg" wrap="nowrap">
-        <Avatar src={user?.avatarUrl} radius="xl" color="orange">{user?.fullName?.charAt(0)}</Avatar>
+        <UserAvatar fullName={user?.fullName} avatarUrl={user?.avatarUrl} />
         <TextInput value={value} onChange={(e) => setValue(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} placeholder="Viết bình luận..." radius="xl" style={{ flex: 1 }} />
         <Button radius="xl" color="dark" onClick={handleSubmit} loading={postComment.isPending}>Gửi</Button>
       </Group>
