@@ -7,7 +7,6 @@ import { CourseHeader } from '../components/CourseHeader';
 import { CourseInfoBox } from '../components/CourseInfoBox';
 import { CourseOverviewCard } from '../components/CourseOverviewCard';
 import { useCourseDetail } from '../hooks/useCourseDetail';
-import { mockComments } from '../mock/mockComments';
 
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +50,7 @@ export function CourseDetailPage() {
           />
           <AboutSection description={course.description} />
           <ChapterList chapters={course.chapters} />
-          <CommentSection comments={mockComments} />
+          <CommentSection courseId={course.id} />
         </Stack>
       </Grid.Col>
     </Grid>
