@@ -48,23 +48,26 @@ export interface TocPageItem {
 interface ReadingLayoutProps {
   children: ReactNode;
 
-  // Topbar
   courseTitle: string;
   chapterTitle: string;
   progressPercent: number;
 
-  // Footer
   currentPageIndex: number;
   totalPages: number;
   isPrevDisabled?: boolean;
   isNextDisabled?: boolean;
 
-  // Handlers điều hướng — do component cha (page-level) quyết định
   onBack: () => void;
   onPrev: () => void;
   onNext: () => void;
 
-  // Dữ liệu cho Drawer Mục lục — optional, nếu không truyền thì Drawer hiện trạng thái rỗng
+  // MỚI: điều hướng CHƯƠNG (khác onPrev/onNext là điều hướng TRANG ở trên).
+  // Bug cũ: nút "Chương tiếp" tái dùng nhầm onNext -> giờ tách hẳn ra 2 cặp handler độc lập.
+  onPrevChapter?: () => void;
+  onNextChapter?: () => void;
+  isPrevChapterDisabled?: boolean;
+  isNextChapterDisabled?: boolean;
+
   tocPages?: TocPageItem[];
   currentPageId?: number;
   onNavigateToPage?: (pageId: number) => void;
@@ -82,6 +85,10 @@ export function ReadingLayout({
   onBack,
   onPrev,
   onNext,
+  onPrevChapter,
+  onNextChapter,
+  isPrevChapterDisabled,
+  isNextChapterDisabled,
   tocPages = [],
   currentPageId,
   onNavigateToPage,
@@ -132,11 +139,24 @@ export function ReadingLayout({
         </Group>
 
         <Group gap="xs" wrap="nowrap">
+          {/* MỚI: nút Chương trước — trước đây hoàn toàn chưa có UI cho thao tác này */}
+          <Button
+            variant="subtle"
+            color="orange"
+            size="xs"
+            onClick={onPrevChapter}
+            disabled={isPrevChapterDisabled}
+            leftSection={<IconChevronLeft size={14} />}
+          >
+            Chương trước
+          </Button>
+          {/* Fix bug: trước đây onClick={onNext} (điều hướng TRANG) -> giờ dùng đúng onNextChapter */}
           <Button
             variant="light"
             color="orange"
             size="xs"
-            onClick={onNext}
+            onClick={onNextChapter}
+            disabled={isNextChapterDisabled}
             rightSection={<IconChevronLeft size={14} style={{ transform: 'rotate(180deg)' }} />}
           >
             Chương tiếp
