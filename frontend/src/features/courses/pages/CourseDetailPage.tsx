@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Grid, Stack, Loader, Alert, Center } from '@mantine/core';
 import { AboutSection } from '../components/AboutSection';
 import { ChapterList } from '../components/ChapterList';
@@ -10,16 +10,26 @@ import { useCourseDetail } from '../hooks/useCourseDetail';
 
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const courseId = Number(id);
   const { data: course, isLoading, isError, error } = useCourseDetail(courseId);
 
   if (isLoading) return <Center h={300}><Loader color="orange" /></Center>;
 
   if (isError) {
-    // TODO: nếu message chứa "passcode" -> hiện form nhập passcode và gọi lại useCourseDetail(courseId, passcode)
     return <Alert color="red">{(error as Error).message}</Alert>;
   }
   if (!course) return null;
+
+  // Bug fix: nút "Bắt đầu học" trước đây không có handler (onStartLearning không được truyền)
+  // -> click không làm gì. Nay lấy chương có orderIndex nhỏ nhất, điều hướng thẳng vào đó.
+  // Không cần truyền pageId trên URL vì ChapterReadingPage tự lấy trang đầu tiên của chương
+  // khi thiếu pageId (xem sortedPages[0]?.id trong ChapterReadingPage.tsx).
+  const handleStartLearning = () => {
+    const firstChapter = [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex)[0];
+    if (!firstChapter) return; // khóa học chưa có chương nào
+    navigate(`/courses/${course.id}/learn/${firstChapter.id}`);
+  };
 
   return (
     <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
@@ -35,6 +45,7 @@ export function CourseDetailPage() {
             tags={course.tags}
             progressPercent={0} // chưa có API tiến độ
             currentChapterOrderIndex={null} // chưa có API "tiếp tục học"
+            onStartLearning={handleStartLearning}
           />
           <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
         </Stack>

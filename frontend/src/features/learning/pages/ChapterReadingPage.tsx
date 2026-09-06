@@ -22,6 +22,20 @@ export function ChapterReadingPage() {
   const activePageId = pageId ? Number(pageId) : sortedPages[0]?.id;
   const { data: page, isLoading: loadingPage } = usePageDetail(activePageId);
 
+  // MỚI: danh sách chương của khóa học (đã có sẵn từ GET /api/courses/{id}, dùng chung
+  // với useCourseDetail phía trên) -> tìm chương liền trước/liền sau chương đang đọc.
+  // Đây là điều hướng CHƯƠNG, khác hoàn toàn với điều hướng TRANG (goToPage) bên dưới.
+  const sortedChapters = course ? [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex) : [];
+  const currentChapterIndex = sortedChapters.findIndex((c) => c.id === Number(chapterId));
+  const prevChapter = currentChapterIndex > 0 ? sortedChapters[currentChapterIndex - 1] : null;
+  const nextChapter =
+    currentChapterIndex >= 0 && currentChapterIndex < sortedChapters.length - 1
+      ? sortedChapters[currentChapterIndex + 1]
+      : null;
+
+  // Nhảy chương mới -> không kèm pageId, ChapterReadingPage sẽ tự vào trang đầu của chương đó
+  const goToChapter = (id: number) => navigate(`/courses/${courseId}/learn/${id}`);
+
   if (loadingChapter) return <Center h={300}><Loader color="orange" /></Center>;
   if (chapterError) return <Alert color="red">{(chapterErrObj as Error).message}</Alert>;
   if (!chapter) return null;
@@ -35,14 +49,14 @@ export function ChapterReadingPage() {
     id: p.id,
     title: p.title,
     orderIndex: p.orderIndex,
-    isLocked: false, // đã qua check quyền ở BE khi load chapter -> không có trang nào bị khóa riêng
+    isLocked: false,
   }));
 
   return (
     <ReadingLayout
       courseTitle={course?.title ?? ''}
       chapterTitle={chapter.title}
-      progressPercent={0} // chưa có API tiến độ (GET /api/courses/{id}/progress)
+      progressPercent={0}
       currentPageIndex={currentIndex + 1}
       totalPages={totalPages}
       isPrevDisabled={currentIndex <= 0}
@@ -50,6 +64,11 @@ export function ChapterReadingPage() {
       onBack={() => navigate(`/courses/${courseId}`)}
       onPrev={() => sortedPages[currentIndex - 1] && goToPage(sortedPages[currentIndex - 1].id)}
       onNext={() => sortedPages[currentIndex + 1] && goToPage(sortedPages[currentIndex + 1].id)}
+      // MỚI: cặp handler riêng cho nút Chương trước / Chương tiếp ở topbar
+      onPrevChapter={prevChapter ? () => goToChapter(prevChapter.id) : undefined}
+      onNextChapter={nextChapter ? () => goToChapter(nextChapter.id) : undefined}
+      isPrevChapterDisabled={!prevChapter}
+      isNextChapterDisabled={!nextChapter}
       tocPages={tocPages}
       currentPageId={activePageId}
       onNavigateToPage={goToPage}

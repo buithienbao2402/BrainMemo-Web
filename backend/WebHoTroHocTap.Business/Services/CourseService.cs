@@ -20,7 +20,6 @@ public class CourseService : ICourseService
 
     public async Task<int> CreateCourseAsync(int creatorId, string title, string? description, string? coverImageKey, AccessType accessType, string? passcode, List<string> tags)
     {
-        // #1: nếu PROTECTED mà không có passcode nào -> ném lỗi ngay, không cho lọt xuống DB
         string? hashedPasscode = ResolvePasscodeHash(accessType, passcode, existingPasscodeHash: null);
 
         var course = new Course
@@ -36,15 +35,12 @@ public class CourseService : ICourseService
 
         _context.Courses.Add(course);
 
-        // #6: resolve tag 1 lần bằng 1 query, không loop query từng cái
         var tagEntities = await ResolveTagsAsync(tags);
         foreach (var tagEntity in tagEntities)
         {
             course.CourseTags.Add(new CourseTag { Course = course, Tag = tagEntity });
         }
 
-        // #6: 1 lần SaveChanges duy nhất cho course + tag mới + liên kết course_tag
-        // => EF Core gom tất cả vào 1 transaction ngầm, atomic thật sự.
         await _context.SaveChangesAsync();
 
         return course.CourseId;
@@ -60,7 +56,6 @@ public class CourseService : ICourseService
         if (course == null) return false;
         if (course.CreatorId != creatorId) throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa khóa học này.");
 
-        // #1: giữ passcode cũ nếu không đổi, ném lỗi nếu chuyển sang PROTECTED mà không có passcode nào cả
         string? hashedPasscode = ResolvePasscodeHash(accessType, passcode, course.Passcode);
 
         course.Title = title;
@@ -69,7 +64,6 @@ public class CourseService : ICourseService
         course.AccessType = accessType;
         course.Passcode = hashedPasscode;
 
-        // #8: chỉ đổi status nếu client thực sự gửi lên
         if (status.HasValue)
         {
             course.Status = status.Value;
@@ -79,7 +73,6 @@ public class CourseService : ICourseService
 
         await SyncCourseTagsAsync(course, tags);
 
-        // #6: 1 lần SaveChanges duy nhất cho toàn bộ thay đổi ở trên
         await _context.SaveChangesAsync();
 
         return true;
@@ -98,7 +91,6 @@ public class CourseService : ICourseService
 
     public async Task<object> GetCoursesAsync(string scope, string? search, string? tag, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId)
     {
-        // #11: chặn page/pageSize không hợp lệ trước khi query
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? DefaultPageSize : Math.Min(pageSize, MaxPageSize);
 
@@ -106,8 +98,6 @@ public class CourseService : ICourseService
             .Include(c => c.Creator)
             .Include(c => c.CourseTags)
                 .ThenInclude(ct => ct.Tag)
-            // #7: bỏ .Include(c => c.Enrollments) và .Include(c => c.Comments)
-            // Count() bên dưới vẫn dịch đúng thành COUNT(*) subquery, không cần tải cả bảng.
             .AsQueryable();
 
         if (scope == "owned" && currentUserId.HasValue)
@@ -118,10 +108,12 @@ public class CourseService : ICourseService
         {
             query = query.Where(c => c.Enrollments.Any(e => e.UserId == currentUserId.Value));
         }
-        else
-        {
-            query = query.Where(c => c.AccessType == AccessType.PUBLIC);
-        }
+        // scope "public" (mặc định, dùng cho Home + Explore): KHÔNG lọc theo AccessType nữa.
+        // Trước đây có `query = query.Where(c => c.AccessType == AccessType.PUBLIC)` ở đây,
+        // nhưng theo yêu cầu mới, listing phải hiển thị TẤT CẢ khóa học (PUBLIC/PRIVATE/PROTECTED).
+        // FE tự hiện icon khóa dựa vào field `accessType` đã có sẵn trong response bên dưới.
+        // Việc chặn nội dung thật (PRIVATE/PROTECTED) vẫn được enforce ở GetCourseByIdAsync khi
+        // user bấm vào xem chi tiết, nên không lộ dữ liệu nhạy cảm, chỉ lộ metadata (tên, ảnh bìa...).
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -134,23 +126,27 @@ public class CourseService : ICourseService
             query = query.Where(c => c.CourseTags.Any(ct => ct.Tag.TagName == cleanTag));
         }
 
-        // MỚI: filter theo status
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CourseStatus>(status, true, out var statusEnum))
             query = query.Where(c => c.Status == statusEnum);
 
-        // MỚI: filter theo accessType (dùng cho màn Khám phá — "Loại khóa học")
         if (!string.IsNullOrWhiteSpace(accessType) && Enum.TryParse<AccessType>(accessType, true, out var accessTypeEnum))
             query = query.Where(c => c.AccessType == accessTypeEnum);
 
-        // MỚI: "Mới ra mắt" chỉ tính khóa học đã có tối thiểu 1 chương
-        if (sort == "newest")
-            query = query.Where(c => c.Chapters.Any());
+        // ĐÃ XÓA: filter "sort == newest thì chỉ lấy course có ít nhất 1 chương".
+        // Lý do xóa:
+        // 1) Yêu cầu mới: "Mới ra mắt" phải hiển thị TẤT CẢ khóa học, chỉ khác nhau ở THỨ TỰ sắp xếp
+        //    (mới tạo nhất lên đầu) — không được ẩn khóa học nào.
+        // 2) Đây chính là nguyên nhân khóa học 0 chương bị ẩn khỏi Creator Dashboard: nếu sort mặc
+        //    định ở tầng Controller là "newest" khi FE không truyền sort, điều kiện Chapters.Any()
+        //    vô tình áp dụng luôn cho scope=owned.
 
         query = sort switch
         {
             "updated" => query.OrderByDescending(c => c.UpdatedAt),
             "participants" => query.OrderByDescending(c => c.Enrollments.Count),
             "comments" => query.OrderByDescending(c => c.Comments.Count),
+            // "newest" rơi vào nhánh mặc định này -> sắp xếp theo CreatedAt giảm dần, đúng nghĩa
+            // "mới ra mắt nhất lên đầu", không cần điều kiện lọc riêng nào nữa.
             _ => query.OrderByDescending(c => c.CreatedAt)
         };
 
@@ -233,7 +229,7 @@ public class CourseService : ICourseService
                 id = ch.ChapterId,
                 title = ch.Title,
                 orderIndex = ch.OrderIndex,
-                accessType = ch.AccessType // Chapter chưa đổi sang enum, để nguyên như bản gốc
+                accessType = ch.AccessType
             }).ToList(),
             createdAt = course.CreatedAt,
             updatedAt = course.UpdatedAt,
@@ -244,14 +240,6 @@ public class CourseService : ICourseService
         };
     }
 
-    /// <summary>
-    /// #1: Xác định passcode hash cuối cùng dựa trên accessType.
-    /// - Không phải PROTECTED -> luôn null (xóa passcode cũ nếu có, ví dụ chuyển PROTECTED -> PUBLIC).
-    /// - PROTECTED + có passcode mới -> hash lại bằng BCrypt.
-    /// - PROTECTED + không gửi passcode mới nhưng đã có hash cũ -> giữ nguyên (trường hợp Update không đổi passcode).
-    /// - PROTECTED + không có passcode nào cả (mới lẫn cũ) -> ném PasscodeRequiredException,
-    ///   chặn đứng trước khi chạm DB (init_db.sql có CHECK constraint chk_course_passcode).
-    /// </summary>
     private static string? ResolvePasscodeHash(AccessType accessType, string? newPasscode, string? existingPasscodeHash)
     {
         if (accessType != AccessType.PROTECTED)
@@ -272,23 +260,17 @@ public class CourseService : ICourseService
         throw new PasscodeRequiredException();
     }
 
-    /// <summary>
-    /// #6: Đồng bộ tag cho course ĐÃ TỒN TẠI, thao tác hoàn toàn trong bộ nhớ (navigation collection).
-    /// KHÔNG gọi SaveChanges ở đây -> gộp chung vào 1 lần SaveChanges duy nhất ở UpdateCourseAsync.
-    /// </summary>
     private async Task SyncCourseTagsAsync(Course course, List<string>? tags)
     {
         var tagEntities = await ResolveTagsAsync(tags);
         var wantedNames = tagEntities.Select(t => t.TagName).ToHashSet();
 
-        // Bỏ liên kết những tag không còn trong danh sách mới
         var toRemove = course.CourseTags.Where(ct => !wantedNames.Contains(ct.Tag.TagName)).ToList();
         foreach (var ct in toRemove)
         {
             course.CourseTags.Remove(ct);
         }
 
-        // Thêm liên kết cho tag mới (bỏ qua tag đã có sẵn liên kết từ trước)
         var linkedNames = course.CourseTags.Select(ct => ct.Tag.TagName).ToHashSet();
         foreach (var tagEntity in tagEntities)
         {
@@ -299,10 +281,6 @@ public class CourseService : ICourseService
         }
     }
 
-    /// <summary>
-    /// #6: Tra cứu tag đã tồn tại bằng 1 query duy nhất (thay vì query từng cái trong loop).
-    /// Tag chưa có thì tạo entity mới, CHƯA SaveChanges (sẽ được lưu cùng lượt SaveChanges của tầng gọi).
-    /// </summary>
     private async Task<List<Tag>> ResolveTagsAsync(List<string>? rawTags)
     {
         var cleanNames = (rawTags ?? new List<string>())
