@@ -6,7 +6,7 @@ import { CourseStatsRow } from './CourseStatsRow';
 import classes from './CourseOverviewCard.module.css';
 
 interface CourseOverviewCardProps {
-  coverImageUrl: string;
+  coverImageUrl?: string | null;
   eyebrow: string;
   title: string;
   chaptersCount: number;
