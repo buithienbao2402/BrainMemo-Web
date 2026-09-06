@@ -13,6 +13,7 @@ import { CourseDetailPage } from '@/features/courses/pages/CourseDetailPage';
 import { ReadingLayout } from '@/app/layouts/ReadingLayout';
 import { mockChapterDetail, mockPagesById } from '@/features/learning/mock/mockReadingData';
 import { ContentRenderer } from '@/features/learning/components/ContentRenderer';
+import { ChapterReadingPage } from '@/features/learning/pages/ChapterReadingPage';
 
 function ReadingModeDemo() {
   const totalPages = mockChapterDetail.pages.length; 
@@ -122,8 +123,8 @@ export function AppRouter() {
       />
 
       <Route 
-        path="/courses/:courseId/learn/:chapterId/:pageId" 
-        element={accessToken ? <ReadingModeDemo /> : <Navigate to="/login" replace />} 
+        path="/courses/:courseId/learn/:chapterId/:pageId?" 
+        element={accessToken ? <ChapterReadingPage /> : <Navigate to="/login" replace />} 
       />
 
       {/* Route dự phòng: Bấm bậy bạ thì văng về Dashboard (rồi Dashboard sẽ tự check login) */}

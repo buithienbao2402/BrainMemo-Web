@@ -28,10 +28,12 @@ import {
 import type {
   CourseDashboardStats,
   CourseInvitation,
+  CourseDetail,
 } from '../types/course-detail.types';
 import { CreateCourseModal, type CourseRecord } from '../components/CreateCourseModal';
 
 interface CourseOverviewTabProps {
+  course: CourseDetail;
   stats: CourseDashboardStats;
   invitations: CourseInvitation[];
 }
@@ -47,24 +49,23 @@ interface CourseOverviewTabProps {
  * khi nối GET /api/courses/{id} thật, chỉ cần thay object này bằng data từ hook, phần logic mở
  * modal Sửa bên dưới không cần đổi gì thêm.
  */
-const COURSE_META = {
-  title: 'Nhập Môn Python - Từ Zero tới Hero',
-  description: '', // TODO: chưa có trong bất kỳ API nào ở tab này — thay bằng data thật khi có
-  instructorName: 'Thầy Code Dạo',
-  statusLabel: 'Đang ra',
-  status: 'UPDATING' as const, // TODO: map đúng theo status thật (PAUSED | COMPLETED | UPDATING) khi có API
-  accessLabel: 'Private',
-  accessType: 'PRIVATE' as const,
-  coverImageUrl: null as string | null,
-  tags: [] as string[],
-  createdAt: '2023-10-20T00:00:00.000Z',
+
+const STATUS_LABELS: Record<CourseDetail['status'], string> = {
+  UPDATING: 'Đang ra',
+  PAUSED: 'Tạm dừng',
+  COMPLETED: 'Đã hoàn thành',
+};
+const ACCESS_LABELS: Record<CourseDetail['accessType'], string> = {
+  PUBLIC: 'Public',
+  PRIVATE: 'Private',
+  PROTECTED: 'Protected',
 };
 
 function formatDate(isoDate: string): string {
   return new Intl.DateTimeFormat('vi-VN').format(new Date(isoDate));
 }
 
-export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps) {
+export function CourseOverviewTab({ course, stats, invitations }: CourseOverviewTabProps) {
   // Route: /creator/courses/:id — tab này không nhận courseId qua props nên lấy thẳng từ URL.
   const { id: courseId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -76,13 +77,13 @@ export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps
     if (!courseId) return;
     setEditingCourse({
       id: courseId,
-      title: COURSE_META.title,
-      description: COURSE_META.description,
-      coverImageUrl: COURSE_META.coverImageUrl,
-      tags: COURSE_META.tags,
-      accessType: COURSE_META.accessType,
-      status: COURSE_META.status,
-      createdAt: COURSE_META.createdAt,
+      title: course.title,
+      description: course.description,
+      coverImageUrl: course.coverImageUrl,
+      tags: course.tags,
+      accessType: course.accessType,
+      status: course.status,
+      createdAt: course.createdAt,
     });
     setIsCourseModalOpen(true);
   };
@@ -126,9 +127,9 @@ export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps
               </ThemeIcon>
   
               <Stack gap={4} style={{ flex: 1 }}>
-                <Text fw={600}>{COURSE_META.title}</Text>
+                <Text fw={600}>{course.title}</Text>
                 <Text size="sm" c="dimmed">
-                  Bởi {COURSE_META.instructorName}
+                  Bởi {course.creator.fullName}
                 </Text>
               </Stack>
             </Group>
@@ -141,7 +142,7 @@ export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps
                   Trạng thái:
                 </Text>
                 <Badge color="teal" variant="light">
-                  {COURSE_META.statusLabel}
+                  {STATUS_LABELS[course.status]}
                 </Badge>
               </Group>
               <Group justify="space-between">
@@ -149,14 +150,14 @@ export function CourseOverviewTab({ stats, invitations }: CourseOverviewTabProps
                   Quyền truy cập:
                 </Text>
                 <Badge color="orange" variant="light" leftSection={<IconLock size={12} />}>
-                  {COURSE_META.accessLabel}
+                  {ACCESS_LABELS[course.accessType]}
                 </Badge>
               </Group>
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">
                   Ngày tạo:
                 </Text>
-                <Text size="sm">{formatDate(COURSE_META.createdAt)}</Text>
+                <Text size="sm">{formatDate(course.createdAt)}</Text>
               </Group>
             </Stack>
           </Card>

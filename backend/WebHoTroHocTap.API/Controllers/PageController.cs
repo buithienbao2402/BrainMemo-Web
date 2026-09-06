@@ -40,12 +40,28 @@ public class PageController : ControllerBase
     }
 
     [HttpGet("api/pages/{id}")]
-    public async Task<IActionResult> GetPageDetail(int id)
+    public async Task<IActionResult> GetPageDetail(int id, [FromHeader(Name = "X-Access-Passcode")] string? passcode)
     {
-        var detail = await _pageService.GetPageDetailAsync(id);
-        if (detail == null) return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy trang" });
+        try
+        {
+            int? userId = GetCurrentUserId();
+            var detail = await _pageService.GetPageDetailAsync(id, userId, passcode);
+            if (detail == null) return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy trang" });
 
-        return Ok(new ApiResponse<object> { Success = true, Message = "Lấy nội dung trang thành công", Data = detail });
+            return Ok(new ApiResponse<object> { Success = true, Message = "Lấy nội dung trang thành công", Data = detail });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            if (ex.Message == "PASSCODE_INVALID")
+                return StatusCode(403, new ApiResponse<object> { Success = false, Message = "Sai hoặc thiếu passcode" });
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var claim = User.FindFirst("userId");
+        return claim != null && int.TryParse(claim.Value, out int userId) ? userId : null;
     }
 
     [HttpPut("api/pages/{id}")]
