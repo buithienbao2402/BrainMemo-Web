@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Box, Grid, Stack, Group, Text, ScrollArea, Loader, Paper } from '@mantine/core';
-import { IconBook2, IconTrophy, IconCrown } from '@tabler/icons-react';
+import { IconBook2, IconTrophy, IconCrown, IconUsers } from '@tabler/icons-react';
 import { useNewestCourses, useCompletedCourses, useRecentlyUpdatedCourses } from '../hooks/useHomeSections';
 import { CourseMiniCard } from '../components/CourseMiniCard';
 import { SidebarPlaceholderCard } from '../components/SidebarPlaceholderCard';
@@ -57,7 +57,10 @@ export function HomePage() {
                                                 <Text size="sm" fw={600}>{c.title}</Text>
                                                 <Text size="xs" c="dimmed">{c.creator.fullName}</Text>
                                             </Stack>
-                                            <Text size="xs" c="dimmed">{c.participantsCount} học viên</Text>
+                                            <Text size="xs" c="dimmed">
+                                                <IconUsers size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                                {c.participantsCount} học viên
+                                            </Text>
                                         </Group>
                                     ))}
                                 </Stack>

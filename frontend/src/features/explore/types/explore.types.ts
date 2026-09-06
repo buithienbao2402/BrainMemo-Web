@@ -11,6 +11,9 @@ export interface CourseListItem {
   updatedAt: string;
   chapterCount: number;
   participantsCount: number;
+  commentsCount?: number;
+  flashcardsCount?: number;
+  quizzesCount?: number;
 }
 
 export interface CourseListResponse {

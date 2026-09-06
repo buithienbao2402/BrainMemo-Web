@@ -26,7 +26,7 @@ export function CourseDetailPage() {
       <Grid.Col span={{ base: 12, md: 4 }}>
         <Stack gap="lg">
           <CourseOverviewCard
-            coverImageUrl={course.coverImageUrl ?? ''}
+            coverImageUrl={course.coverImageUrl}
             eyebrow={course.tags[0] ?? ''}
             title={course.title}
             chaptersCount={course.chaptersCount}

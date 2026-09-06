@@ -1,8 +1,9 @@
 import { Badge } from '@mantine/core';
+import { getCourseCoverUrl } from '@/shared/utils/courseVisuals';
 import classes from './CourseCoverImage.module.css';
 
 interface CourseCoverImageProps {
-  imageUrl: string;
+  imageUrl?: string | null;
   eyebrow: string;
   title: string;
 }
@@ -10,7 +11,7 @@ interface CourseCoverImageProps {
 export function CourseCoverImage({ imageUrl, eyebrow, title }: CourseCoverImageProps) {
   return (
     <div className={classes.wrapper}>
-      <img src={imageUrl} alt={title} className={classes.image} />
+      <img src={getCourseCoverUrl(imageUrl)} alt={title} className={classes.image} />
       <div className={classes.overlay} />
       <div className={classes.content}>
         <Badge className={classes.eyebrow} variant="light" size="sm" radius="sm">
