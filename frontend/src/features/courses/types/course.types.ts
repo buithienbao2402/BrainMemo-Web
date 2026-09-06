@@ -7,8 +7,8 @@ export interface ChapterSummary {
   title: string;
   orderIndex: number;
   accessType: AccessType;
-  isCompleted: boolean;
-  isCurrent: boolean;
+  isCompleted?: boolean;
+  isCurrent?: boolean;
 }
 
 export interface CourseComment {
@@ -38,10 +38,12 @@ export interface CourseDetail {
   flashcardsCount: number;
   quizzesCount: number;
   tags: string[];
-  progressPercent: number;
+  //progressPercent: number; chưa có interface
   status: CourseStatus;
   accessType: AccessType;
-  currentChapterId: number | null;
+  //currentChapterId: number | null; chưa có interface
+  //chapters: ChapterSummary[];
+  //comments: CourseComment[];
   chapters: ChapterSummary[];
-  comments: CourseComment[];
 }
+

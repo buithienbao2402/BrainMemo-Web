@@ -2,7 +2,7 @@
 // Bổ sung case QUIZ và FLASHCARD. FLASHCARD block chứa mảng cards -> map ra nhiều FlashcardBlockView.
 
 import { Stack } from '@mantine/core';
-import type { Block } from '@/features/learning/mock/mockReadingData';
+import type { Block } from '@/features/learning/types/reading.types';
 import { TextBlockView } from './TextBlockView';
 import { ImageBlockView } from './ImageBlockView';
 import { QuizBlockView } from './QuizBlockView';
@@ -22,13 +22,12 @@ export function ContentRenderer({ blocks }: ContentRendererProps) {
           case 'IMAGE':
             return <ImageBlockView key={block.id} mediaUrl={block.mediaUrl} />;
           case 'QUIZ':
-            return <QuizBlockView key={block.id} questions={block.questions} />;
+            return <QuizBlockView key={block.id} questions={block.quiz?.questions ?? []} />;
           case 'FLASHCARD':
-            // 1 FLASHCARD block có thể chứa nhiều thẻ -> render từng thẻ riêng, key theo card.id
             return (
               <Stack key={block.id} gap="sm">
-                {block.cards.map((card) => (
-                  <FlashcardBlockView key={card.id} frontText={card.frontText} backText={card.backText} />
+                {(block.flashcards ?? []).map((card) => (
+                  <FlashcardBlockView key={card.flashcardId} frontText={card.frontText} backText={card.backText} />
                 ))}
               </Stack>
             );

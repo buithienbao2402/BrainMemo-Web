@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query';
-import { submitChapterDraftMock, updateChapterDraftMock } from '../api/chapter-builder.mock.api';
 import { submitChapterDraftReal, updateChapterDraftReal } from '../api/chapter-builder.api';
 import type { ChapterDraftSnapshot } from '../store/chapterBuilderStore';
 
@@ -32,7 +31,6 @@ export function useSubmitChapterBuilder() {
         }
         // Luồng Update: Chờ API gọi xong (trả về void)
         if (USE_MOCK) {
-          await updateChapterDraftMock(chapterId, draftState);
         } else {
           await updateChapterDraftReal(chapterId, draftState, removedPageIds, removedBlockIds);
         }
@@ -41,9 +39,7 @@ export function useSubmitChapterBuilder() {
       }
 
       // Luồng Create (vốn đã trả về object { success, chapterId })
-      return USE_MOCK
-        ? submitChapterDraftMock(draftState)
-        : submitChapterDraftReal(courseId, draftState);
+      return submitChapterDraftReal(courseId, draftState);
     },
   });
 }

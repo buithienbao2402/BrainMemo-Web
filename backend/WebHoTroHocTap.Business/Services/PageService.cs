@@ -41,9 +41,10 @@ public class PageService : IPageService
             .ToListAsync();
     }
 
-    public async Task<object?> GetPageDetailAsync(int pageId)
+    public async Task<object?> GetPageDetailAsync(int pageId, int? currentUserId, string? passcodeHeader)
     {
         var page = await _context.Pages
+            .Include(p => p.Chapter).ThenInclude(c => c.Course)
             .Include(p => p.Blocks.OrderBy(b => b.OrderIndex))
                 .ThenInclude(b => b.Quiz)
                     .ThenInclude(q => q!.QuizQuestions.OrderBy(qq => qq.OrderIndex))
@@ -51,9 +52,28 @@ public class PageService : IPageService
             .Include(p => p.Blocks.OrderBy(b => b.OrderIndex))
                 .ThenInclude(b => b.FlashcardSet)
                     .ThenInclude(fs => fs!.Flashcards.OrderBy(fc => fc.OrderIndex))
+            .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.PageId == pageId);
 
         if (page == null) return null;
+
+        var chapter = page.Chapter;
+        bool isCreator = currentUserId.HasValue && chapter.Course.CreatorId == currentUserId.Value;
+        bool isEnrolled = currentUserId.HasValue &&
+            await _context.Enrollments.AnyAsync(e => e.UserId == currentUserId.Value && e.CourseId == chapter.CourseId);
+
+        if (chapter.IsDraft && !isCreator)
+            throw new UnauthorizedAccessException("Chương đang ở trạng thái nháp.");
+
+        if (chapter.AccessType == "PRIVATE" && !isCreator && !isEnrolled)
+            throw new UnauthorizedAccessException("Chương này ở chế độ riêng tư.");
+
+        if (chapter.AccessType == "PROTECTED" && !isCreator)
+        {
+            if (string.IsNullOrEmpty(passcodeHeader) || string.IsNullOrEmpty(chapter.Passcode)
+                || !BCrypt.Net.BCrypt.Verify(passcodeHeader, chapter.Passcode))
+                throw new UnauthorizedAccessException("PASSCODE_INVALID");
+        }
 
         return new
         {

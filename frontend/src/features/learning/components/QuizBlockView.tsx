@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Box, Text, Radio, Button, Stack, Group, ThemeIcon, Alert } from '@mantine/core';
 import { IconCheck, IconX, IconBulb } from '@tabler/icons-react';
-import type { QuizQuestion } from '@/features/learning/mock/mockReadingData';
+import type { QuizQuestion } from '@/features/learning/types/reading.types';
 import classes from './QuizBlockView.module.css';
 
 interface QuizBlockViewProps {
@@ -20,7 +20,7 @@ function QuizQuestionItem({ question }: { question: QuizQuestion }) {
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const selectedOption = question.options.find((o) => o.id === selectedOptionId);
+  const selectedOption = question.options.find((o) => o.optionId === selectedOptionId);
   const isCorrect = submitted && selectedOption?.isCorrect === true;
 
   // Class trạng thái cho từng option: chỉ tô màu SAU khi đã submit
@@ -40,16 +40,16 @@ function QuizQuestionItem({ question }: { question: QuizQuestion }) {
       <Radio.Group value={selectedOptionId?.toString() ?? ''} onChange={(v) => setSelectedOptionId(Number(v))}>
         <Stack gap="xs">
           {question.options.map((option) => (
-            <label key={option.id} className={getOptionClass(option.id, option.isCorrect)}>
+            <label key={option.optionId} className={getOptionClass(option.optionId, option.isCorrect)}>
               <Group justify="space-between" wrap="nowrap">
-                <Radio value={option.id.toString()} label={option.optionText} disabled={submitted} color="orange" />
+                <Radio value={option.optionId.toString()} label={option.optionText} disabled={submitted} color="orange" />
                 {/* Icon kết quả chỉ hiện sau khi nộp */}
                 {submitted && option.isCorrect && (
                   <ThemeIcon color="green" variant="light" size="sm" radius="xl">
                     <IconCheck size={14} />
                   </ThemeIcon>
                 )}
-                {submitted && !option.isCorrect && option.id === selectedOptionId && (
+                {submitted && !option.isCorrect && option.optionId === selectedOptionId && (
                   <ThemeIcon color="red" variant="light" size="sm" radius="xl">
                     <IconX size={14} />
                   </ThemeIcon>
@@ -84,7 +84,7 @@ export function QuizBlockView({ questions }: QuizBlockViewProps) {
   return (
     <Box className={classes.wrapper}>
       {questions.map((q) => (
-        <QuizQuestionItem key={q.id} question={q} />
+        <QuizQuestionItem key={q.questionId} question={q} />
       ))}
     </Box>
   );

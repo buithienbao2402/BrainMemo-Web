@@ -91,6 +91,9 @@ public class ChapterService : IChapterService
         if (chapter == null) return null;
 
         bool isCreator = currentUserId.HasValue && chapter.Course.CreatorId == currentUserId.Value;
+        
+        bool isEnrolled = currentUserId.HasValue &&
+            await _context.Enrollments.AnyAsync(e => e.UserId == currentUserId.Value && e.CourseId == chapter.CourseId);
 
         if (chapter.IsDraft && !isCreator)
         {
@@ -104,6 +107,9 @@ public class ChapterService : IChapterService
                 throw new UnauthorizedAccessException("PASSCODE_INVALID");
             }
         }
+
+        if (chapter.AccessType == "PRIVATE" && !isCreator && !isEnrolled)
+            throw new UnauthorizedAccessException("Chương này ở chế độ riêng tư.");
 
         return new
         {

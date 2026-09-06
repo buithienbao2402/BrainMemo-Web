@@ -200,6 +200,12 @@ public class CourseService : ICourseService
             }
         }
 
+        int participantsCount = await _context.Enrollments.CountAsync(e => e.CourseId == courseId);
+        int flashcardsCount = await _context.Blocks
+            .CountAsync(b => b.Page.Chapter.CourseId == courseId && b.BlockType == "FLASHCARD");
+        int quizzesCount = await _context.Blocks
+            .CountAsync(b => b.Page.Chapter.CourseId == courseId && b.BlockType == "QUIZ");
+
         return new
         {
             courseId = course.CourseId,
@@ -218,7 +224,11 @@ public class CourseService : ICourseService
                 accessType = ch.AccessType // Chapter chưa đổi sang enum, để nguyên như bản gốc
             }).ToList(),
             createdAt = course.CreatedAt,
-            updatedAt = course.UpdatedAt
+            updatedAt = course.UpdatedAt,
+            participantsCount,
+            chaptersCount = course.Chapters.Count,
+            flashcardsCount,
+            quizzesCount,
         };
     }
 
