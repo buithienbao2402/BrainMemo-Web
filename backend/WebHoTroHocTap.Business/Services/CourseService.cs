@@ -96,7 +96,7 @@ public class CourseService : ICourseService
         return true;
     }
 
-    public async Task<object> GetCoursesAsync(string scope, string? search, string? tag, string? sort, int page, int pageSize, int? currentUserId)
+    public async Task<object> GetCoursesAsync(string scope, string? search, string? tag, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId)
     {
         // #11: chặn page/pageSize không hợp lệ trước khi query
         page = page < 1 ? 1 : page;
@@ -133,6 +133,18 @@ public class CourseService : ICourseService
             string cleanTag = tag.Trim().ToLower();
             query = query.Where(c => c.CourseTags.Any(ct => ct.Tag.TagName == cleanTag));
         }
+
+        // MỚI: filter theo status
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CourseStatus>(status, true, out var statusEnum))
+            query = query.Where(c => c.Status == statusEnum);
+
+        // MỚI: filter theo accessType (dùng cho màn Khám phá — "Loại khóa học")
+        if (!string.IsNullOrWhiteSpace(accessType) && Enum.TryParse<AccessType>(accessType, true, out var accessTypeEnum))
+            query = query.Where(c => c.AccessType == accessTypeEnum);
+
+        // MỚI: "Mới ra mắt" chỉ tính khóa học đã có tối thiểu 1 chương
+        if (sort == "newest")
+            query = query.Where(c => c.Chapters.Any());
 
         query = sort switch
         {

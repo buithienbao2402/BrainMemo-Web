@@ -13,6 +13,7 @@ export interface ChapterSummary {
 
 export interface CourseComment {
   id: number;
+  authorId: number;
   authorName: string;
   authorAvatarUrl?: string;
   content: string;

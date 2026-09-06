@@ -1,0 +1,4 @@
+.wrapper { background: var(--mantine-color-body); border-bottom: 1px solid var(--mantine-color-gray-3); padding: 12px 24px; }
+.topRow { margin-bottom: 12px; }
+.searchInput { flex: 1; max-width: 480px; }
+.tabRow { padding-top: 8px; }

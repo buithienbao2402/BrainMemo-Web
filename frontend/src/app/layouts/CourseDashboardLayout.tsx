@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
@@ -16,10 +17,14 @@ interface CourseDashboardLayoutProps {
 export function CourseDashboardLayout({ children }: CourseDashboardLayoutProps) {
   const openCreateCourseModal = useUIStore((s) => s.openCreateCourseModal);
 
+  const navigate = useNavigate();
+
   return (
     <div className={classes.page}>
       <header className={classes.header}>
-        <img src={logoUrl} alt="BrainMemo" className={classes.headerLogo} />
+        <Group style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <img src={logoUrl} alt="BrainMemo" className={classes.headerLogo} />
+        </Group>
 
         <Group gap="sm">
           <Button

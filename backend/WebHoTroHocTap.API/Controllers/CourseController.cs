@@ -24,11 +24,13 @@ public class CourseController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] string? tag = null,
         [FromQuery] string? sort = "newest",
+        [FromQuery] string? status = null,
+        [FromQuery] string? accessType = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
         int? userId = GetCurrentUserId();
-        var result = await _courseService.GetCoursesAsync(scope, search, tag, sort, page, pageSize, userId);
+        var result = await _courseService.GetCoursesAsync(scope, search, tag, sort, status, accessType, page, pageSize, userId);
         return Ok(new ApiResponse<object> { Success = true, Message = "Lấy danh sách khóa học thành công", Data = result });
     }
 
