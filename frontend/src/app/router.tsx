@@ -9,9 +9,7 @@ import { CourseDashboardLayout } from '@/app/layouts/CourseDashboardLayout';
 import ChapterBuilderPage from '@/features/page-content/pages/ChapterBuilderPage';
 import { StudentCourseLayout } from '@/app/layouts/StudentCourseLayout';
 import { CourseDetailPage } from '@/features/courses/pages/CourseDetailPage';
-
 import { ChapterReadingPage } from '@/features/learning/pages/ChapterReadingPage';
-
 import { MainLayout } from '@/app/layouts/MainLayout';
 import { HomePage } from '@/features/home/pages/HomePage';
 import { ExplorePage } from '@/features/explore/pages/ExplorePage';
@@ -22,19 +20,15 @@ export function AppRouter() {
 
   return (
     <Routes>
-      {/* Các route Auth (Tự văng ra Dashboard nếu đã login) */}
-      <Route path="/login" element={accessToken ? <Navigate to="/creator/dashboard" replace /> : <LoginPage />} />
-      <Route path="/register" element={accessToken ? <Navigate to="/creator/dashboard" replace /> : <RegisterPage />} />
+      {/* Đã đăng nhập mà cố vào /login hay /register -> văng về Trang chủ */}
+      <Route path="/login" element={accessToken ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/register" element={accessToken ? <Navigate to="/" replace /> : <RegisterPage />} />
 
-      {/* =========================================
-          LUỒNG CREATOR - YÊU CẦU ĐĂNG NHẬP
-          ========================================= */}
-
+      {/* ========== LUỒNG CREATOR ========== */}
       <Route
         path="/creator/dashboard"
         element={accessToken ? <CreatorDashboard /> : <Navigate to="/login" replace />}
       />
-
       <Route
         path="/creator/courses/:id"
         element={
@@ -47,20 +41,16 @@ export function AppRouter() {
           )
         }
       />
-
       <Route
         path="/creator/courses/:courseId/chapters/new"
         element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />}
       />
-
       <Route
         path="/creator/courses/:courseId/chapters/:chapterId/edit"
         element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />}
       />
 
-      {/* =========================================
-          LUỒNG HỌC VIÊN - YÊU CẦU ĐĂNG NHẬP
-          ========================================= */}
+      {/* ========== LUỒNG HỌC VIÊN ========== */}
       <Route
         path="/courses/:id"
         element={
@@ -73,9 +63,6 @@ export function AppRouter() {
           )
         }
       />
-
-      {/* Route Learning Mode (Đọc chương) bảo vệ bằng accessToken chuẩn nhóm */}
-
       <Route
         path="/courses/:courseId/learn/:chapterId/:pageId?"
         element={accessToken ? <ChapterReadingPage /> : <Navigate to="/login" replace />}
@@ -85,8 +72,8 @@ export function AppRouter() {
       <Route path="/explore" element={accessToken ? (<MainLayout><ExplorePage /></MainLayout>) : (<Navigate to="/login" replace />)} />
       <Route path="/profile" element={accessToken ? (<MainLayout><ProfilePage /></MainLayout>) : (<Navigate to="/login" replace />)} />
 
-      {/* Route dự phòng: Bấm bậy bạ thì văng về Dashboard (rồi Dashboard sẽ tự check login) */}
-      <Route path="*" element={<Navigate to="/creator/dashboard" replace />} />
+      {/* Route dự phòng: mọi path lạ -> Trang chủ (Home tự lo check login) */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

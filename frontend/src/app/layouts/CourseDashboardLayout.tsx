@@ -4,10 +4,10 @@ import { Button, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
+import { Footer } from '@/features/layout/components/Footer';
 
 import logoUrl from '@/assets/brainmemo-logo-dark.png';
 import dashboardIconUrl from '@/assets/brainmemo-course-management-topbar-icon.png';
-import logoFooterUrl from '@/assets/brainmemo-logo-orange.png';
 import classes from './CourseDashboardLayout.module.css';
 
 interface CourseDashboardLayoutProps {
@@ -16,7 +16,6 @@ interface CourseDashboardLayoutProps {
 
 export function CourseDashboardLayout({ children }: CourseDashboardLayoutProps) {
   const openCreateCourseModal = useUIStore((s) => s.openCreateCourseModal);
-
   const navigate = useNavigate();
 
   return (
@@ -42,19 +41,7 @@ export function CourseDashboardLayout({ children }: CourseDashboardLayoutProps) 
 
       <main className={classes.main}>{children}</main>
 
-      <footer className={classes.footer}>
-        <div className={classes.footerLeft}>
-          <img src={logoFooterUrl} alt="BrainMemo" className={classes.footerLogo} />
-          <span>Khám phá tri thức, mở rộng tầm mắt</span>
-          <span>·</span>
-          <span>© {new Date().getFullYear()}</span>
-        </div>
-
-        <div className={classes.footerRight}>
-          <span className={classes.liveDot} />
-          Đang có 0 người đọc
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

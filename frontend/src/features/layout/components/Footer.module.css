@@ -1,0 +1,46 @@
+.footer {
+  background-color: light-dark(#ffffff, var(--mantine-color-dark-7));
+  padding: 24px 0;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  margin-top: auto;
+}
+
+.footerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  font-size: 14px;
+  color: var(--mantine-color-gray-6);
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footerLogo {
+  height: 40px;
+  transform: scale(1.7);
+  transform-origin: left center;
+  margin-right: 32px;
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f9e44;
+  display: inline-block;
+}

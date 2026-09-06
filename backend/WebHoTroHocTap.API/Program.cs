@@ -6,6 +6,7 @@ using System.Text;
 using WebHoTroHocTap.API.Json;
 using WebHoTroHocTap.Business.Services;
 using WebHoTroHocTap.DataAccess;
+using WebHoTroHocTap.DataAccess.Entities;
 using WebHoTroHocTap.DataAccess.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -85,6 +86,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 builder.Services.AddAuthorization();
 var app = builder.Build();
