@@ -7,7 +7,12 @@ namespace WebHoTroHocTap.Business.Services;
 public class CommentService : ICommentService
 {
     private readonly AppDbContext _context;
-    public CommentService(AppDbContext context) => _context = context;
+    private readonly INotificationService _notificationService;
+    public CommentService(AppDbContext context, INotificationService notificationService)
+    {
+        _context = context;
+        _notificationService = notificationService;
+    }
 
     public async Task<object> GetCommentsAsync(int courseId, int page, int pageSize)
     {
@@ -42,6 +47,17 @@ public class CommentService : ICommentService
         await _context.SaveChangesAsync();
 
         var user = await _context.Users.FindAsync(userId);
+
+        var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+        if (course != null && course.CreatorId != userId)
+        {
+            await _notificationService.CreateNotificationAsync(
+                course.CreatorId,
+                "NEW_COMMENT",
+                $"{user!.FullName} đã bình luận trong khóa học {course.Title}"
+            );
+        }
+
         return new
         {
             id = comment.CommentId,

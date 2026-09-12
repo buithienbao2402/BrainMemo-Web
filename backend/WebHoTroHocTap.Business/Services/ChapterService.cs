@@ -8,10 +8,12 @@ namespace WebHoTroHocTap.Business.Services;
 public class ChapterService : IChapterService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public ChapterService(AppDbContext context)
+    public ChapterService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<int> CreateChapterAsync(int courseId, int userId, ChapterRequestDto dto)
@@ -46,6 +48,12 @@ public class ChapterService : IChapterService
 
         _context.Chapters.Add(chapter);
         await _context.SaveChangesAsync();
+
+        if (!dto.IsDraft)
+        {
+            await NotifyNewChapterAsync(course, chapter);
+        }
+
         return chapter.ChapterId;
     }
 
@@ -130,6 +138,8 @@ public class ChapterService : IChapterService
         if (chapter == null) return false;
         if (chapter.Course.CreatorId != userId) throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa chương này.");
 
+        bool wasDraft = chapter.IsDraft;
+
         chapter.Title = dto.Title;
         chapter.AccessType = dto.AccessType ?? "PUBLIC";
         chapter.IsDraft = dto.IsDraft;
@@ -147,6 +157,12 @@ public class ChapterService : IChapterService
         }
 
         await _context.SaveChangesAsync();
+
+        if (wasDraft && !chapter.IsDraft)
+        {
+            await NotifyNewChapterAsync(chapter.Course, chapter);
+        }
+
         return true;
     }
 
@@ -159,5 +175,20 @@ public class ChapterService : IChapterService
         _context.Chapters.Remove(chapter);
         await _context.SaveChangesAsync();
         return true;
+    }
+    private async Task NotifyNewChapterAsync(Course course, Chapter chapter)
+    {
+        var enrolledUserIds = await _context.Enrollments
+            .Where(e => e.CourseId == course.CourseId)
+            .Select(e => e.UserId)
+            .ToListAsync();
+
+        if (enrolledUserIds.Count == 0) return;
+
+        await _notificationService.CreateNotificationsAsync(
+            enrolledUserIds,
+            "NEW_CHAPTER",
+            $"Khóa học {course.Title} vừa có chương mới: {chapter.Title}"
+        );
     }
 }
