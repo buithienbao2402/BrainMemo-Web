@@ -22,7 +22,9 @@ public class CourseController : ControllerBase
     public async Task<IActionResult> GetCourses(
         [FromQuery] string scope = "public",
         [FromQuery] string? search = null,
-        [FromQuery] string? tag = null,
+        // #Tag-filter: đổi "string? tag" -> "List<string>? tags". ASP.NET Core tự bind
+        // nhiều query string cùng tên "tags=A&tags=B" vào List<string> này.
+        [FromQuery] List<string>? tags = null,
         [FromQuery] string? sort = "newest",
         [FromQuery] string? status = null,
         [FromQuery] string? accessType = null,
@@ -30,7 +32,7 @@ public class CourseController : ControllerBase
         [FromQuery] int pageSize = 20)
     {
         int? userId = GetCurrentUserId();
-        var result = await _courseService.GetCoursesAsync(scope, search, tag, sort, status, accessType, page, pageSize, userId);
+        var result = await _courseService.GetCoursesAsync(scope, search, tags, sort, status, accessType, page, pageSize, userId);
         return Ok(new ApiResponse<object> { Success = true, Message = "Lấy danh sách khóa học thành công", Data = result });
     }
 
@@ -65,7 +67,6 @@ public class CourseController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateCourse([FromBody] CourseRequestDto dto)
     {
-        // #5: không dùng "!.Value" ép buộc nữa, kiểm tra tường minh
         int? userId = GetCurrentUserId();
         if (userId == null)
         {
@@ -88,8 +89,6 @@ public class CourseController : ControllerBase
         }
         catch (PasscodeRequiredException ex)
         {
-            // TODO: đối chiếu lại đúng kiểu dữ liệu "Errors" trong ApiResponse<T> của bạn,
-            // đổi lại phần khởi tạo bên dưới cho khớp nếu khác.
             return BadRequest(new ApiResponse<object>
             {
                 Success = false,
@@ -179,7 +178,6 @@ public class CourseController : ControllerBase
 
     private int? GetCurrentUserId()
     {
-        // #5: TryParse thay vì Parse, không còn ném FormatException nếu claim sai định dạng
         var claim = User.FindFirst("userId");
         if (claim != null && int.TryParse(claim.Value, out int userId))
         {
