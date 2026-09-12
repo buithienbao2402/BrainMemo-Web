@@ -1,15 +1,17 @@
-﻿namespace WebHoTroHocTap.API.DTOs.Media;
+﻿using Microsoft.AspNetCore.Http;
 
-public class PresignedUrlRequestDto
+namespace WebHoTroHocTap.API.DTOs.Media;
+
+public class MediaUploadRequestDto
 {
-    public string FileName { get; set; } = string.Empty;
-    public string ContentType { get; set; } = string.Empty;
+    public IFormFile File { get; set; } = null!;
     public string MediaType { get; set; } = "IMAGE"; // IMAGE, AUDIO, VIDEO
 }
 
-public class PresignedUrlResponseDto
+public class MediaUploadResponseDto
 {
-    public string UploadUrl { get; set; } = string.Empty;
-    public string ObjectKey { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
+    public string Url { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string MediaType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
 }

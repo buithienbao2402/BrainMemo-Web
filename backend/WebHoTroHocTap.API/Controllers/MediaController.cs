@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Minio;
-using Minio.DataModel.Args;
 using WebHoTroHocTap.API.DTOs.Common;
 using WebHoTroHocTap.API.DTOs.Media;
 
@@ -11,44 +9,102 @@ namespace WebHoTroHocTap.API.Controllers;
 [Route("api/media")]
 public class MediaController : ControllerBase
 {
-    private readonly IConfiguration _config;
-    private readonly IMinioClient _minioClient;
+    private readonly IWebHostEnvironment _env;
 
-    public MediaController(IConfiguration config)
+    private static readonly Dictionary<string, string[]> AllowedExtensions = new()
     {
-        _config = config;
-        _minioClient = new MinioClient()
-            .WithEndpoint(_config["Minio:Endpoint"])
-            .WithCredentials(_config["Minio:AccessKey"], _config["Minio:SecretKey"])
-            .WithSSL(_config.GetValue<bool>("Minio:WithSSL"))
-            .Build();
+        { "IMAGE", new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" } },
+        { "AUDIO", new[] { ".mp3", ".wav", ".ogg", ".m4a" } },
+        { "VIDEO", new[] { ".mp4", ".webm", ".mov", ".mkv" } }
+    };
+
+    public MediaController(IWebHostEnvironment env)
+    {
+        _env = env;
     }
 
-    [HttpPost("presigned-url")]
+    [HttpPost("upload")]
     [Authorize]
-    public async Task<IActionResult> GetPresignedUrl([FromBody] PresignedUrlRequestDto request)
+    [RequestSizeLimit(100 * 1024 * 1024)] // 100MB
+    public async Task<IActionResult> UploadMedia([FromForm] MediaUploadRequestDto request)
     {
-        string bucket = _config["Minio:BucketName"] ?? "brainmemo-media";
-        string objectKey = $"uploads/{request.MediaType.ToLower()}/{Guid.NewGuid()}_{request.FileName}";
-        int expiryInSeconds = 600; // Link upload tồn tại trong 10 phút
-
-        var args = new PresignedPutObjectArgs()
-            .WithBucket(bucket)
-            .WithObject(objectKey)
-            .WithExpiry(expiryInSeconds);
-
-        string uploadUrl = await _minioClient.PresignedPutObjectAsync(args);
-
-        return Ok(new ApiResponse<PresignedUrlResponseDto>
+        try
         {
-            Success = true,
-            Message = "Lấy upload url thành công",
-            Data = new PresignedUrlResponseDto
+            var file = request.File;
+            if (file == null || file.Length == 0)
             {
-                UploadUrl = uploadUrl,
-                ObjectKey = objectKey,
-                ExpiresAt = DateTime.UtcNow.AddSeconds(expiryInSeconds)
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Vui lòng chọn tệp tin để tải lên."
+                });
             }
-        });
+
+            var type = (request.MediaType ?? "IMAGE").ToUpper();
+            if (!AllowedExtensions.ContainsKey(type))
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Loại media không hợp lệ. Chỉ chấp nhận IMAGE, AUDIO, VIDEO."
+                });
+            }
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions[type].Contains(ext))
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Định dạng tệp {ext} không được hỗ trợ cho loại {type}."
+                });
+            }
+
+            string subFolder = type switch
+            {
+                "IMAGE" => "images",
+                "AUDIO" => "audios",
+                "VIDEO" => "videos",
+                _ => "others"
+            };
+
+            string uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", subFolder);
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            string uniqueFileName = $"{Guid.NewGuid():N}_{Path.GetFileName(file.FileName)}";
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            string relativeUrl = $"/uploads/{subFolder}/{uniqueFileName}";
+            string fullUrl = $"{Request.Scheme}://{Request.Host}{relativeUrl}";
+
+            return Ok(new ApiResponse<MediaUploadResponseDto>
+            {
+                Success = true,
+                Message = "Tải lên media thành công.",
+                Data = new MediaUploadResponseDto
+                {
+                    Url = fullUrl,
+                    FileName = file.FileName,
+                    MediaType = type,
+                    FileSize = file.Length
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponse<object>
+            {
+                Success = false,
+                Message = $"Lỗi máy chủ: {ex.Message}"
+            });
+        }
     }
 }
