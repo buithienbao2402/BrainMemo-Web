@@ -89,7 +89,7 @@ public class CourseService : ICourseService
         return true;
     }
 
-    public async Task<object> GetCoursesAsync(string scope, string? search, string? tag, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId)
+    public async Task<object> GetCoursesAsync(string scope, string? search, List<string>? tags, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? DefaultPageSize : Math.Min(pageSize, MaxPageSize);
@@ -120,10 +120,26 @@ public class CourseService : ICourseService
             query = query.Where(c => c.Title.Contains(search) || c.Creator.FullName.Contains(search));
         }
 
-        if (!string.IsNullOrWhiteSpace(tag))
+        // #Tag-filter: lọc theo NHIỀU tag cùng lúc, kiểu OR — khóa học hiện ra nếu có
+        // ÍT NHẤT 1 trong các tag được chọn. Tag lưu trong DB luôn ở dạng lowercase
+        // (xem ResolveTagsAsync), nên chuẩn hóa cleanTags về lowercase trước khi so khớp.
+        if (tags != null && tags.Count > 0)
         {
-            string cleanTag = tag.Trim().ToLower();
-            query = query.Where(c => c.CourseTags.Any(ct => ct.Tag.TagName == cleanTag));
+            var cleanTags = tags
+                .Select(t => t.Trim().ToLower())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Distinct()
+                .ToList();
+
+            if (cleanTags.Count > 0)
+            {
+                // MỚI: Lọc AND — Khóa học bắt buộc phải chứa TẤT CẢ các tag trong cleanTags
+                foreach (var tag in cleanTags)
+                {
+                    var currentTag = tag; // Tạo biến cục bộ tránh lỗi closure
+                    query = query.Where(c => c.CourseTags.Any(ct => ct.Tag.TagName == currentTag));
+                }
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CourseStatus>(status, true, out var statusEnum))
@@ -132,21 +148,11 @@ public class CourseService : ICourseService
         if (!string.IsNullOrWhiteSpace(accessType) && Enum.TryParse<AccessType>(accessType, true, out var accessTypeEnum))
             query = query.Where(c => c.AccessType == accessTypeEnum);
 
-        // ĐÃ XÓA: filter "sort == newest thì chỉ lấy course có ít nhất 1 chương".
-        // Lý do xóa:
-        // 1) Yêu cầu mới: "Mới ra mắt" phải hiển thị TẤT CẢ khóa học, chỉ khác nhau ở THỨ TỰ sắp xếp
-        //    (mới tạo nhất lên đầu) — không được ẩn khóa học nào.
-        // 2) Đây chính là nguyên nhân khóa học 0 chương bị ẩn khỏi Creator Dashboard: nếu sort mặc
-        //    định ở tầng Controller là "newest" khi FE không truyền sort, điều kiện Chapters.Any()
-        //    vô tình áp dụng luôn cho scope=owned.
-
         query = sort switch
         {
             "updated" => query.OrderByDescending(c => c.UpdatedAt),
             "participants" => query.OrderByDescending(c => c.Enrollments.Count),
             "comments" => query.OrderByDescending(c => c.Comments.Count),
-            // "newest" rơi vào nhánh mặc định này -> sắp xếp theo CreatedAt giảm dần, đúng nghĩa
-            // "mới ra mắt nhất lên đầu", không cần điều kiện lọc riêng nào nữa.
             _ => query.OrderByDescending(c => c.CreatedAt)
         };
 

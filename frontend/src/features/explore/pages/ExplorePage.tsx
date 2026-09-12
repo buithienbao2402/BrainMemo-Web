@@ -6,8 +6,15 @@ import { CourseCard } from '../components/CourseCard';
 import { useExploreCourses } from '../hooks/useExploreCourse';
 import type { ExploreFilters } from '../types/explore.types';
 
+function parseTagsParam(params: URLSearchParams): string[] {
+  return (params.get('tags') ?? '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
 export function ExplorePage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams(); // Thêm setSearchParams
   const navigate = useNavigate();
 
   const [filters, setFilters] = useState<ExploreFilters>({
@@ -15,26 +22,55 @@ export function ExplorePage() {
     sort: (searchParams.get('sort') as ExploreFilters['sort']) ?? 'updated',
     status: (searchParams.get('status') as ExploreFilters['status']) ?? '',
     accessType: (searchParams.get('accessType') as ExploreFilters['accessType']) ?? '',
-    tag: searchParams.get('tag') ?? '',
+    tags: parseTagsParam(searchParams),
     page: 1,
   });
 
   useEffect(() => {
-    setFilters((f) => ({
-      ...f,
+    setFilters({
       search: searchParams.get('search') ?? '',
       sort: (searchParams.get('sort') as ExploreFilters['sort']) ?? 'updated',
       status: (searchParams.get('status') as ExploreFilters['status']) ?? '',
-      page: 1,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      accessType: (searchParams.get('accessType') as ExploreFilters['accessType']) ?? '',
+      tags: parseTagsParam(searchParams),
+      page: Number(searchParams.get('page')) || 1, // Đọc cả page từ URL nếu có
+    });
   }, [searchParams]);
 
   const { data, isLoading } = useExploreCourses(filters);
 
+  // HÀM MỚI: Xử lý khi filter thay đổi -> Cập nhật URL thay vì chỉ cập nhật State
+  const handleFilterChange = (patch: Partial<ExploreFilters>) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    // Merge các patch mới vào params hiện tại
+    Object.entries(patch).forEach(([key, value]) => {
+      if (key === 'tags') {
+        const tagArray = value as string[];
+        if (tagArray.length > 0) {
+          newParams.set('tags', tagArray.join(',')); // Nối bằng dấu phẩy
+        } else {
+          newParams.delete('tags');
+        }
+      } else if (value) {
+        newParams.set(key, String(value));
+      } else {
+        newParams.delete(key);
+      }
+    });
+
+    // Luôn reset về trang 1 khi đổi filter (trừ khi patch có chứa 'page')
+    if (!patch.page) {
+      newParams.set('page', '1');
+    }
+
+    setSearchParams(newParams); // Đẩy lên URL -> Sẽ kích hoạt lại useEffect ở trên
+  };
+
   return (
     <Stack gap="lg" p="lg">
-      <FilterBar filters={filters} onChange={(patch) => setFilters((f) => ({ ...f, ...patch, page: 1 }))} />
+      {/* TRUYỀN HÀM MỚI VÀO onChange */}
+      <FilterBar filters={filters} onChange={handleFilterChange} />
 
       {isLoading ? (
         <Center h={200}><Loader color="orange" /></Center>
@@ -47,7 +83,12 @@ export function ExplorePage() {
       )}
 
       {data && data.totalPages > 1 && (
-        <Pagination value={filters.page} onChange={(page) => setFilters((f) => ({ ...f, page }))} total={data.totalPages} color="orange" />
+        <Pagination 
+           value={filters.page} 
+           onChange={(page) => handleFilterChange({ page })} // Sửa lại onChange của pagination
+           total={data.totalPages} 
+           color="orange" 
+        />
       )}
     </Stack>
   );

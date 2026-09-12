@@ -7,6 +7,6 @@ public interface ICourseService
     Task<int> CreateCourseAsync(int creatorId, string title, string? description, string? coverImageKey, AccessType accessType, string? passcode, List<string> tags);
     Task<bool> UpdateCourseAsync(int courseId, int creatorId, string title, string? description, string? coverImageKey, AccessType accessType, string? passcode, CourseStatus? status, List<string> tags);
     Task<bool> DeleteCourseAsync(int courseId, int creatorId);
-    Task<object> GetCoursesAsync(string scope, string? search, string? tag, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId);
+    Task<object> GetCoursesAsync(string scope, string? search, List<string>? tags, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId);
     Task<object?> GetCourseByIdAsync(int courseId, int? currentUserId, string? passcodeHeader);
 }
