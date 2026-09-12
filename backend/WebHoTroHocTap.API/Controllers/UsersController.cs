@@ -42,4 +42,30 @@ public class UsersController : ControllerBase
             }
         });
     }
+
+    [HttpPost("me/heartbeat")]
+    public async Task<IActionResult> Heartbeat()
+    {
+        var userIdClaim = User.FindFirst("userId")?.Value;
+        if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Token không hợp lệ." });
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy người dùng." });
+        }
+
+        user.TotalActiveSeconds += 60;
+        await _context.SaveChangesAsync();
+
+        return Ok(new ApiResponse<object>
+        {
+            Success = true,
+            Message = "OK",
+            Data = new { totalActiveSeconds = user.TotalActiveSeconds }
+        });
+    }
 }

@@ -117,7 +117,7 @@ export function TopBar() {
           <Group gap="xs">
             <NavPill to="/" label="Trang chủ" icon={<IconHome size={18} />} />
             <NavPill
-              to="/creator/dashboard"
+              to="/learning/dashboard"
               label="Dashboard học tập"
               icon={<img src={dashIcon} alt="" className={classes.navIcon} />}
             />

@@ -493,6 +493,9 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("'LIGHT'")
                 .HasColumnType("enum('LIGHT','DARK')")
                 .HasColumnName("theme_mode");
+            entity.Property(e => e.TotalActiveSeconds)
+                .HasDefaultValue(0)
+                .HasColumnName("total_active_seconds");
             entity.Property(e => e.UpdatedAt)
                 .ValueGeneratedOnAddOrUpdate()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
