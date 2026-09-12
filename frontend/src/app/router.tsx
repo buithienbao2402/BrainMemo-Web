@@ -14,6 +14,7 @@ import { MainLayout } from '@/app/layouts/MainLayout';
 import { HomePage } from '@/features/home/pages/HomePage';
 import { ExplorePage } from '@/features/explore/pages/ExplorePage';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 
 export function AppRouter() {
   const { accessToken } = useAuthStore();
@@ -23,6 +24,7 @@ export function AppRouter() {
       {/* Đã đăng nhập mà cố vào /login hay /register -> văng về Trang chủ */}
       <Route path="/login" element={accessToken ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/register" element={accessToken ? <Navigate to="/" replace /> : <RegisterPage />} />
+      <Route path="/forgot-password" element={accessToken ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
 
       {/* ========== LUỒNG CREATOR ========== */}
       <Route
@@ -74,6 +76,8 @@ export function AppRouter() {
 
       {/* Route dự phòng: mọi path lạ -> Trang chủ (Home tự lo check login) */}
       <Route path="*" element={<Navigate to="/" replace />} />
+      
     </Routes>
+
   );
 }

@@ -4,8 +4,11 @@ import type {
   LoginPayload,
   RegisterRequestOtpPayload,
   RegisterVerifyPayload,
+  ForgotPasswordRequestOtpPayload,
+  ForgotPasswordVerifyPayload,
 } from '../types/auth.types';
 import type { UserProfile } from '../store/authStore';
+
 
 export interface LoginResponseData {
   accessToken: string;
@@ -44,5 +47,28 @@ export const authApi = {
   getCurrentUser: async () => {
     const { data } = await apiClient.get<ApiResponse<UserProfile>>('/users/me');
     return data;
-  }
+  },
+
+  logout: async () => {
+    const { data } = await apiClient.post<ApiResponse<null>>('/auth/logout');
+    return data;
+  },
+
+  /** POST /api/auth/forgot-password/request-otp -> gửi OTP đặt lại mật khẩu */
+  requestForgotPasswordOtp: async (payload: ForgotPasswordRequestOtpPayload) => {
+    const { data } = await apiClient.post<ApiResponse<null>>(
+      '/auth/forgot-password/request-otp',
+      payload
+    );
+    return data;
+  },
+
+  /** POST /api/auth/forgot-password/verify -> xác thực OTP, đặt mật khẩu mới */
+  verifyForgotPassword: async (payload: ForgotPasswordVerifyPayload) => {
+    const { data } = await apiClient.post<ApiResponse<null>>(
+      '/auth/forgot-password/verify',
+      payload
+    );
+    return data;
+  },
 };

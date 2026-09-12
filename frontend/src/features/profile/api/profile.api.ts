@@ -29,3 +29,13 @@ export async function uploadToMinio(uploadUrl: string, file: File) {
   // Dùng axios gốc, KHÔNG dùng apiClient — tránh interceptor gắn Authorization/refresh vào presigned URL
   await axios.put(uploadUrl, file, { headers: { 'Content-Type': file.type } });
 }
+
+export async function requestChangePasswordOtp() {
+  const { data } = await apiClient.post<ApiResponse<null>>('/auth/change-password/request-otp');
+  return data;
+}
+
+export async function changePasswordWithOtp(payload: { otp: string; newPassword: string }) {
+  const { data } = await apiClient.put<ApiResponse<null>>('/auth/change-password-otp', payload);
+  return data;
+}

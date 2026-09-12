@@ -5,6 +5,8 @@ import type {
   LoginPayload,
   RegisterRequestOtpPayload,
   RegisterVerifyPayload,
+  ForgotPasswordRequestOtpPayload,
+  ForgotPasswordVerifyPayload,
 } from '../types/auth.types';
 
 export function useLogin() {
@@ -33,5 +35,30 @@ export function useRequestRegisterOtp() {
 export function useVerifyRegisterOtp() {
   return useMutation({
     mutationFn: (payload: RegisterVerifyPayload) => authApi.verifyRegisterOtp(payload),
+  });
+}
+
+export function useLogout() {
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  return useMutation({
+    mutationFn: () => authApi.logout(),
+    onSettled: () => {
+      // Luôn xóa state FE dù API logout thành công hay lỗi (token có thể đã hết hạn sẵn)
+      clearAuth();
+    },
+  });
+}
+
+export function useForgotPasswordRequestOtp() {
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordRequestOtpPayload) =>
+      authApi.requestForgotPasswordOtp(payload),
+  });
+}
+
+export function useForgotPasswordVerify() {
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordVerifyPayload) => authApi.verifyForgotPassword(payload),
   });
 }

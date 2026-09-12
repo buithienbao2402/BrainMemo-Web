@@ -13,7 +13,7 @@ export function useUpdateProfile() {
     mutationFn: updateMyProfile,
     onSuccess: (updated) => {
       queryClient.setQueryData(['my-profile'], updated);
-      if (accessToken) setAuth(accessToken, updated as any); // đồng bộ avatar/tên ở TopBar
+      if (accessToken) setAuth(accessToken, updated as any); 
     },
   });
 }
@@ -23,7 +23,7 @@ export function useChangePassword() {
   return useMutation({
     mutationFn: changePassword,
     onSuccess: () => {
-      clearAuth(); // contract: đổi mật khẩu thu hồi mọi refresh token, kể cả phiên hiện tại
+      clearAuth(); 
       window.location.href = '/login';
     },
   });
