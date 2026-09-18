@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using WebHoTroHocTap.Business.Services;
+using Microsoft.AspNetCore.Mvc;
 using WebHoTroHocTap.API.DTOs.Auth;
 using WebHoTroHocTap.API.DTOs.Common;
+using WebHoTroHocTap.Business.Services;
 
 namespace WebHoTroHocTap.API.Controllers;
 
@@ -162,5 +163,120 @@ public class AuthController : ControllerBase
                 Message = ex.Message
             });
         }
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var rawToken = Request.Cookies["refreshToken"];
+        if (!string.IsNullOrEmpty(rawToken))
+        {
+            await _authService.LogoutAsync(rawToken);
+        }
+        Response.Cookies.Delete("refreshToken");
+        return Ok(new ApiResponse<object>
+        {
+            Success = true,
+            Message = "Đăng xuất thành công"
+        });
+    }
+
+    [HttpPost("forgot-password/request-otp")]
+    public async Task<IActionResult> ForgotPasswordRequestOtp([FromBody] ForgotPasswordRequestOtpDto request)
+    {
+        try
+        {
+            var (isSuccess, errorMessage) = await _authService.RequestForgotPasswordOtpAsync(request.Email);
+            if (!isSuccess)
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = errorMessage });
+            }
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn."
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpPost("forgot-password/verify")]
+    public async Task<IActionResult> ForgotPasswordVerify([FromBody] ForgotPasswordVerifyDto request)
+    {
+        try
+        {
+            var (isSuccess, errorMessage) = await _authService.ResetPasswordAsync(
+                request.Email, request.Otp, request.NewPassword);
+            if (!isSuccess)
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = errorMessage });
+            }
+            Response.Cookies.Delete("refreshToken");
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpPut("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst("userId")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không xác định được người dùng." });
+            }
+            var (isSuccess, errorMessage) = await _authService.ChangePasswordAsync(
+                userId, request.OldPassword, request.NewPassword);
+            if (!isSuccess)
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = errorMessage });
+            }
+            Response.Cookies.Delete("refreshToken");
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpPost("change-password/request-otp")]
+    [Authorize]
+    public async Task<IActionResult> ChangePasswordRequestOtp()
+    {
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email)) return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không xác định được email." });
+        var (isSuccess, errorMessage) = await _authService.RequestForgotPasswordOtpAsync(email);
+        if (!isSuccess) return BadRequest(new ApiResponse<object> { Success = false, Message = errorMessage });
+        return Ok(new ApiResponse<object> { Success = true, Message = "Mã OTP đã được gửi tới email của bạn." });
+    }
+
+    [HttpPut("change-password-otp")]
+    [Authorize]
+    public async Task<IActionResult> ChangePasswordWithOtp([FromBody] ChangePasswordWithOtpDto request)
+    {
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email)) return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không xác định được email." });
+        var (isSuccess, errorMessage) = await _authService.ResetPasswordAsync(email, request.Otp, request.NewPassword);
+        if (!isSuccess) return BadRequest(new ApiResponse<object> { Success = false, Message = errorMessage });
+        Response.Cookies.Delete("refreshToken");
+        return Ok(new ApiResponse<object> { Success = true, Message = "Đổi mật khẩu thành công. Vui lòng đăng nhập lại." });
     }
 }

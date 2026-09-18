@@ -4,17 +4,24 @@ import { notifications } from '@mantine/notifications';
 import { useMyProfile, useUpdateProfile, useChangePassword } from '../hooks/useProfile';
 import { getPresignedUrl, uploadToMinio } from '../api/profile.api';
 import { UserAvatar } from '@/shared/components/UserAvatar';
+import { useNavigate } from 'react-router-dom';
+import type { AxiosError } from 'axios';
+import type { ApiResponse } from '@/shared/types/api.types';
 
 export function ProfilePage() {
   const { data: profile, isLoading } = useMyProfile();
   const updateProfile = useUpdateProfile();
   const changePasswordMutation = useChangePassword();
+  const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarObjectKey, setAvatarObjectKey] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -50,13 +57,25 @@ export function ProfilePage() {
     );
   };
 
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-
   const handleChangePassword = () => {
+    if (!oldPassword || !newPassword) {
+      notifications.show({ color: 'red', message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới.' });
+      return;
+    }
+
     changePasswordMutation.mutate(
       { oldPassword, newPassword },
-      { onError: () => notifications.show({ color: 'red', message: 'Đổi mật khẩu thất bại. Kiểm tra lại mật khẩu cũ.' }) }
+      {
+        onSuccess: () => {
+          notifications.show({ color: 'green', message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.' });
+          navigate('/login');
+        },
+        onError: (err) => {
+          const axiosErr = err as AxiosError<ApiResponse<null>>;
+          const errorMessage = axiosErr.response?.data?.message || 'Đổi mật khẩu thất bại. Kiểm tra lại mật khẩu cũ.';
+          notifications.show({ color: 'red', message: errorMessage });
+        }
+      }
     );
   };
 

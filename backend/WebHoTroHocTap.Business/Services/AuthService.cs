@@ -182,4 +182,113 @@ public class AuthService : IAuthService
 
         return (true, string.Empty);
     }
+
+    // ==========================================
+    // ĐĂNG XUẤT
+    // ==========================================
+
+    public async Task LogoutAsync(string rawRefreshToken)
+    {
+        var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken)));
+
+        var storedToken = await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash && rt.RevokedAt == null);
+
+        if (storedToken != null)
+        {
+            storedToken.RevokedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    // ==========================================
+    // QUÊN MẬT KHẨU (OTP)
+    // ==========================================
+
+    public async Task<(bool IsSuccess, string ErrorMessage)> RequestForgotPasswordOtpAsync(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return (false, "Email này chưa được đăng ký trong hệ thống.");
+        }
+
+        string otp = new Random().Next(100000, 999999).ToString();
+
+        _cache.Set($"ForgotPasswordOTP_{email}", otp, TimeSpan.FromMinutes(5));
+
+        string subject = "Mã OTP đặt lại mật khẩu WebHoTroHocTap";
+        string body = $"<h3>Mã OTP đặt lại mật khẩu của bạn là: <b style='color:blue;'>{otp}</b></h3><p>Mã này có hiệu lực trong vòng 5 phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>";
+
+        await _emailService.SendEmailAsync(email, subject, body);
+
+        return (true, string.Empty);
+    }
+
+    public async Task<(bool IsSuccess, string ErrorMessage)> ResetPasswordAsync(string email, string otp, string newPassword)
+    {
+        if (!_cache.TryGetValue($"ForgotPasswordOTP_{email}", out string cachedOtp))
+        {
+            return (false, "Mã OTP đã hết hạn hoặc không tồn tại.");
+        }
+
+        if (cachedOtp != otp)
+        {
+            return (false, "Mã OTP không chính xác.");
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return (false, "Tài khoản không tồn tại.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+        // Thu hồi toàn bộ refresh token cũ -> bắt đăng nhập lại ở mọi thiết bị
+        var activeTokens = await _context.RefreshTokens
+            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
+            .ToListAsync();
+        foreach (var t in activeTokens)
+        {
+            t.RevokedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        _cache.Remove($"ForgotPasswordOTP_{email}");
+
+        return (true, string.Empty);
+    }
+
+    // ==========================================
+    // ĐỔI MẬT KHẨU
+    // ==========================================
+
+    public async Task<(bool IsSuccess, string ErrorMessage)> ChangePasswordAsync(int userId, string oldPassword, string newPassword)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+        if (user == null)
+        {
+            return (false, "Không tìm thấy người dùng.");
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(oldPassword, user.PasswordHash))
+        {
+            return (false, "Mật khẩu cũ không đúng.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+        var activeTokens = await _context.RefreshTokens
+            .Where(rt => rt.UserId == user.UserId && rt.RevokedAt == null)
+            .ToListAsync();
+        foreach (var t in activeTokens)
+        {
+            t.RevokedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return (true, string.Empty);
+    }
 }

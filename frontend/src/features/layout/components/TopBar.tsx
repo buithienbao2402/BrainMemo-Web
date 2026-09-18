@@ -16,6 +16,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 
 import { UserAvatar } from '@/shared/components/UserAvatar';
 import classes from './TopBar.module.css';
+import { useLogout } from '@/features/auth/hooks/useAuth';
 
 interface NavPillProps {
   to: string;
@@ -43,6 +44,9 @@ export function TopBar() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { mutate: logout } = useLogout();
+  const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const { user, clearAuth } = useAuthStore();
 
   const [searchValue, setSearchValue] = useState('');
@@ -53,8 +57,9 @@ export function TopBar() {
   };
 
   const handleLogout = () => {
-    clearAuth();
-    navigate('/login');
+    logout(undefined, {
+      onSettled: () => navigate('/login', { replace: true })
+    });
   };
 
   return (

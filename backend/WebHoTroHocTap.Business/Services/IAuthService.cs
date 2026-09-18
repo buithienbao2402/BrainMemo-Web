@@ -10,4 +10,8 @@ public interface IAuthService
     Task<(bool IsSuccess, string ErrorMessage)> VerifyOtpAsync(string email, string otp);
 
     Task<string?> RefreshTokenAsync(string rawRefreshToken);
+    Task LogoutAsync(string rawRefreshToken);
+    Task<(bool IsSuccess, string ErrorMessage)> RequestForgotPasswordOtpAsync(string email);
+    Task<(bool IsSuccess, string ErrorMessage)> ResetPasswordAsync(string email, string otp, string newPassword);
+    Task<(bool IsSuccess, string ErrorMessage)> ChangePasswordAsync(int userId, string oldPassword, string newPassword);
 }
