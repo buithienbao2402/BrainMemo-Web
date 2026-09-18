@@ -19,3 +19,13 @@ export interface RegisterVerifyPayload {
   email: string;
   otp: string;
 }
+
+export interface ForgotPasswordRequestOtpPayload {
+  email: string;
+}
+
+export interface ForgotPasswordVerifyPayload {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
