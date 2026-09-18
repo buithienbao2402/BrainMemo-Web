@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace WebHoTroHocTap.Business.DTOs.Block;
+﻿namespace WebHoTroHocTap.Business.DTOs.Block;
 
 public class BlockRequestDto
 {
     public string BlockType { get; set; } = "TEXT";
     public int OrderIndex { get; set; } = 1;
+
+    // Dùng làm nội dung văn bản (TEXT) hoặc chú thích/caption (IMAGE, AUDIO, VIDEO)
     public string? ContentText { get; set; }
+
+    // Đường dẫn tệp media cục bộ (vd: /uploads/images/abc.png hoặc http://...)
+    public string? MediaUrl { get; set; }
+
     public List<FlashcardItemDto>? Flashcards { get; set; }
     public List<QuizQuestionDto>? Questions { get; set; }
 }

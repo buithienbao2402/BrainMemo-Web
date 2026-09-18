@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using WebHoTroHocTap.Business.DTOs.Block;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
@@ -26,29 +29,35 @@ public class BlockService : IBlockService
         if (page.Chapter.Course.CreatorId != userId)
             throw new UnauthorizedAccessException("Không có quyền thêm block vào trang này.");
 
-        string blockType = dto.BlockType.ToUpper();
+        string blockType = NormalizeBlockType(dto.BlockType, dto.MediaUrl);
 
         var block = new Block
         {
             PageId = pageId,
             BlockType = blockType,
             OrderIndex = dto.OrderIndex,
-            ContentText = blockType == "TEXT" ? dto.ContentText : null
+            ContentText = IsContentOrCaptionType(blockType) ? dto.ContentText : null,
+            MediaUrl = IsMediaType(blockType) ? dto.MediaUrl : null
         };
 
         switch (blockType)
         {
+            case "IMAGE":
+            case "AUDIO":
+            case "VIDEO":
+                if (string.IsNullOrWhiteSpace(dto.MediaUrl))
+                    throw new ArgumentException($"Khối {blockType} bắt buộc phải có đường dẫn tệp (MediaUrl).");
+                break;
+
             case "FLASHCARD":
                 block.FlashcardSet = BuildFlashcardSet(dto.Flashcards);
                 break;
+
             case "QUIZ":
                 block.Quiz = BuildQuiz(dto.Questions);
                 break;
         }
 
-        // Gán qua navigation property phía trên -> EF tự dựng cả cây (Block + FlashcardSet/Quiz +
-        // Flashcard/QuizQuestion/QuizOption con) và chỉ cần 1 lần SaveChangesAsync duy nhất.
-        // Tránh hẳn kiểu "SaveChangesAsync trong vòng lặp" (partial-save risk) từng gặp ở CreateChapterAsync.
         _context.Blocks.Add(block);
         await _context.SaveChangesAsync();
 
@@ -66,9 +75,6 @@ public class BlockService : IBlockService
                     .ThenInclude(qq => qq.QuizOptions)
             .Include(b => b.FlashcardSet)
                 .ThenInclude(fs => fs!.Flashcards)
-            // Quiz.QuizQuestions và FlashcardSet.Flashcards là 2 collection "song song" trong cùng
-            // 1 Block -> nếu gộp chung 1 query sẽ bị cartesian explosion. AsSplitQuery tách thành
-            // nhiều query riêng, an toàn hơn dù block đang xét chỉ có 1 trong 2 loại.
             .AsSplitQuery()
             .FirstOrDefaultAsync(b => b.BlockId == blockId);
 
@@ -76,7 +82,7 @@ public class BlockService : IBlockService
         if (block.Page.Chapter.Course.CreatorId != userId)
             throw new UnauthorizedAccessException("Không có quyền chỉnh sửa block này.");
 
-        string incomingType = dto.BlockType.ToUpper();
+        string incomingType = NormalizeBlockType(dto.BlockType, dto.MediaUrl);
         if (incomingType != block.BlockType)
             throw new ArgumentException("Không thể đổi loại block (blockType) khi cập nhật.");
 
@@ -86,6 +92,15 @@ public class BlockService : IBlockService
         {
             case "TEXT":
                 block.ContentText = dto.ContentText;
+                break;
+
+            case "IMAGE":
+            case "AUDIO":
+            case "VIDEO":
+                if (string.IsNullOrWhiteSpace(dto.MediaUrl))
+                    throw new ArgumentException($"Khối {block.BlockType} bắt buộc phải có đường dẫn tệp (MediaUrl).");
+                block.MediaUrl = dto.MediaUrl;
+                block.ContentText = dto.ContentText; // Lưu caption / mô tả
                 break;
 
             case "FLASHCARD":
@@ -115,12 +130,38 @@ public class BlockService : IBlockService
         if (block.Page.Chapter.Course.CreatorId != userId)
             throw new UnauthorizedAccessException("Không có quyền xóa block này.");
 
-        // Xóa Block sẽ cascade xóa Quiz/FlashcardSet + toàn bộ con (đã cấu hình ON DELETE CASCADE
-        // trong init_db.sql) -> không cần xử lý gì thêm ở đây.
         _context.Blocks.Remove(block);
         await _context.SaveChangesAsync();
         return true;
     }
+
+    // ------------------------------------------------------------------
+    // Tiện ích chuẩn hóa BlockType (khớp cột enum trong DB: TEXT, IMAGE, AUDIO, VIDEO, QUIZ, FLASHCARD)
+    // ------------------------------------------------------------------
+
+    private static string NormalizeBlockType(string rawType, string? mediaUrl)
+    {
+        string type = rawType?.Trim().ToUpper() ?? "TEXT";
+
+        // Nếu client gửi chung chung "MEDIA", tự suy diễn kiểu từ đuôi link tệp
+        if (type == "MEDIA")
+        {
+            string url = mediaUrl?.ToLowerInvariant() ?? string.Empty;
+            if (url.EndsWith(".mp3") || url.EndsWith(".wav") || url.EndsWith(".ogg") || url.EndsWith(".m4a"))
+                return "AUDIO";
+            if (url.EndsWith(".mp4") || url.EndsWith(".webm") || url.EndsWith(".mov") || url.EndsWith(".mkv"))
+                return "VIDEO";
+            return "IMAGE";
+        }
+
+        return type;
+    }
+
+    private static bool IsMediaType(string blockType) =>
+        blockType is "IMAGE" or "AUDIO" or "VIDEO";
+
+    private static bool IsContentOrCaptionType(string blockType) =>
+        blockType is "TEXT" or "IMAGE" or "AUDIO" or "VIDEO";
 
     // ------------------------------------------------------------------
     // Dựng cây entity mới (dùng khi Create)
@@ -173,8 +214,7 @@ public class BlockService : IBlockService
     }
 
     // ------------------------------------------------------------------
-    // Thay thế toàn bộ con (dùng khi Update - full-replace theo api_contract.md mục 9)
-    // Giữ nguyên dòng Quiz/FlashcardSet cha để không đụng UNIQUE constraint trên block_id.
+    // Thay thế toàn bộ con (dùng khi Update)
     // ------------------------------------------------------------------
 
     private void ReplaceFlashcards(FlashcardSet? set, List<FlashcardItemDto> items)
@@ -215,14 +255,13 @@ public class BlockService : IBlockService
     }
 
     // ------------------------------------------------------------------
-    // Validate - khớp ràng buộc nghiệp vụ trong tài liệu "luồng tạo quiz/flashcard":
-    // quiz mỗi câu hỏi tối thiểu 2 đáp án + đúng 1 đáp án đúng.
+    // Validate dữ liệu Flashcard & Quiz
     // ------------------------------------------------------------------
 
     private static void ValidateFlashcards(List<FlashcardItemDto>? items)
     {
         if (items == null || items.Count == 0)
-            throw new ArgumentException("Block Flashcard cần ít nhất 1 cặp mặt trước/sau.");
+            throw new ArgumentException("Khối Flashcard cần ít nhất 1 cặp mặt trước/sau.");
 
         foreach (var item in items)
         {
@@ -234,7 +273,7 @@ public class BlockService : IBlockService
     private static void ValidateQuiz(List<QuizQuestionDto>? questions)
     {
         if (questions == null || questions.Count == 0)
-            throw new ArgumentException("Block Quiz cần ít nhất 1 câu hỏi.");
+            throw new ArgumentException("Khối Quiz cần ít nhất 1 câu hỏi.");
 
         foreach (var q in questions)
         {
