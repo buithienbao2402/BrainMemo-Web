@@ -33,6 +33,7 @@ export interface ExploreFilters {
   sort: SortOption;
   status: StatusFilter;
   accessType: AccessTypeFilter;
-  tag: string;
+  /** #Tag-filter: đổi từ "tag: string" (1 tag) -> "tags: string[]" (multi-select) */
+  tags: string[];
   page: number;
 }

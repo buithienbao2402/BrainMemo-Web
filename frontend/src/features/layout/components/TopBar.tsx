@@ -1,17 +1,19 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ActionIcon, Group, Indicator, Menu, TextInput, UnstyledButton, useMantineColorScheme,
+  ActionIcon, Group, Menu, TextInput, UnstyledButton, useMantineColorScheme,
 } from '@mantine/core';
 import {
-  IconBell, IconSearch, IconSun, IconMoonStars, IconFlame, IconHome,
+  IconSearch, IconSun, IconMoonStars, IconFlame, IconHome,
   IconUser, IconSettings, IconLogout,
 } from '@tabler/icons-react';
+import { NotificationDropdown } from '@/features/notifications/components/NotificationDropdown';
+
 import logoUrl from '@/assets/brainmemo-logo-dark.png';
 import createIcon from '@/assets/brainmemo-create-course-icon.png';
 import dashIcon from '@/assets/course-icon-learning-dashboard-final.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { useUnreadNotificationsCount } from '@/features/notifications/hooks/useUnreadNotificationsCount';
+
 import { UserAvatar } from '@/shared/components/UserAvatar';
 import classes from './TopBar.module.css';
 import { useLogout } from '@/features/auth/hooks/useAuth';
@@ -45,6 +47,8 @@ export function TopBar() {
   const { user } = useAuthStore();
   const { mutate: logout } = useLogout();
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
+  const { user, clearAuth } = useAuthStore();
+
   const [searchValue, setSearchValue] = useState('');
 
   const handleSearch = () => {
@@ -88,11 +92,7 @@ export function TopBar() {
             <span className={classes.createLabel}>TẠO KHÓA HỌC</span>
           </UnstyledButton>
 
-          <Indicator color="red" size={9} offset={5} disabled={unreadCount === 0}>
-            <ActionIcon variant="subtle" size="lg" radius="xl">
-              <IconBell size={22} color="#fff" stroke={1.5} />
-            </ActionIcon>
-          </Indicator>
+          <NotificationDropdown />
 
           <Menu shadow="md" width={200} position="bottom-end">
             <Menu.Target>
@@ -122,7 +122,7 @@ export function TopBar() {
           <Group gap="xs">
             <NavPill to="/" label="Trang chủ" icon={<IconHome size={18} />} />
             <NavPill
-              to="/creator/dashboard"
+              to="/learning/dashboard"
               label="Dashboard học tập"
               icon={<img src={dashIcon} alt="" className={classes.navIcon} />}
             />

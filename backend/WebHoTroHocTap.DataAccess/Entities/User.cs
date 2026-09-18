@@ -23,6 +23,8 @@ public partial class User
 
     public bool? IsActive { get; set; }
 
+    public int TotalActiveSeconds { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

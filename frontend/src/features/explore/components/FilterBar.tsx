@@ -1,4 +1,6 @@
+import { useMemo, useState } from 'react';
 import { TextInput, Stack, Group, Text, Chip } from '@mantine/core';
+import { IconSearch } from '@tabler/icons-react';
 import { useTags } from '../hooks/useTags';
 import type { ExploreFilters } from '../types/explore.types';
 
@@ -25,6 +27,23 @@ interface FilterBarProps { filters: ExploreFilters; onChange: (patch: Partial<Ex
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {
   const { data: tags } = useTags();
+
+  // #Tag-filter: ô tìm kiếm CHỈ lọc danh sách chip đang hiển thị (client-side),
+  // KHÔNG gọi API -> để state riêng, không đưa vào ExploreFilters.
+  const [tagSearch, setTagSearch] = useState('');
+
+  const visibleTags = useMemo(() => {
+    if (!tags) return [];
+    const q = tagSearch.trim().toLowerCase();
+    if (!q) return tags;
+    return tags.filter((t) => t.toLowerCase().includes(q));
+  }, [tags, tagSearch]);
+
+  const toggleTag = (tag: string) => {
+    const isSelected = filters.tags.includes(tag);
+    const nextTags = isSelected ? filters.tags.filter((t) => t !== tag) : [...filters.tags, tag];
+    onChange({ tags: nextTags });
+  };
 
   return (
     <Stack gap="md">
@@ -58,14 +77,33 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
         ))}
       </Group>
 
-      <Group gap="xs">
-        <Text size="sm" w={90}>Nhãn dán:</Text>
-        {tags?.map((tag) => (
-          <Chip key={tag} checked={filters.tag === tag} onChange={() => onChange({ tag: filters.tag === tag ? '' : tag })} color="orange" variant="outline">
-            {tag}
-          </Chip>
-        ))}
-      </Group>
+      <Stack gap={6}>
+        <Group gap="xs">
+          <Text size="sm" w={90}>Nhãn dán:</Text>
+          <TextInput
+            placeholder="Tìm tag..."
+            leftSection={<IconSearch size={14} />}
+            size="xs"
+            w={180}
+            value={tagSearch}
+            onChange={(e) => setTagSearch(e.currentTarget.value)}
+          />
+          {visibleTags.map((tag) => (
+            <Chip key={tag} checked={filters.tags.includes(tag)} onChange={() => toggleTag(tag)} color="orange" variant="outline">
+              {tag}
+            </Chip>
+          ))}
+          {tags && tags.length > 0 && visibleTags.length === 0 && (
+            <Text size="xs" c="dimmed">Không tìm thấy tag phù hợp.</Text>
+          )}
+        </Group>
+
+        {filters.tags.length > 0 && (
+          <Text size="xs" c="orange" ml={98} style={{ cursor: 'pointer' }} onClick={() => onChange({ tags: [] })}>
+            Bỏ chọn tất cả ({filters.tags.length} tag đã chọn)
+          </Text>
+        )}
+      </Stack>
     </Stack>
   );
 }
