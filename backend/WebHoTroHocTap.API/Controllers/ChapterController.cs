@@ -16,7 +16,6 @@ public class ChapterController : ControllerBase
         _chapterService = chapterService;
     }
 
-    // Lấy danh sách chương: ?isDraft=false (đã đăng), ?isDraft=true (nháp)
     [HttpGet("api/courses/{courseId}/chapters")]
     public async Task<IActionResult> GetChapters(int courseId, [FromQuery] bool isDraft = false)
     {
@@ -45,11 +44,14 @@ public class ChapterController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
+            if (ex.Message == "PASSCODE_REQUIRED" || ex.Message == "PASSCODE_INVALID")
+            {
+                return PasscodeErrorResponse(ex.Message);
+            }
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
     }
 
-    // Tạo chương (Đăng ngay: isDraft=false, Lưu nháp: isDraft=true)
     [HttpPost("api/courses/{courseId}/chapters")]
     [Authorize]
     public async Task<IActionResult> CreateChapter(int courseId, [FromBody] ChapterRequestDto dto)
@@ -100,6 +102,20 @@ public class ChapterController : ControllerBase
         {
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+    }
+
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
     }
 
     private int? GetCurrentUserId()

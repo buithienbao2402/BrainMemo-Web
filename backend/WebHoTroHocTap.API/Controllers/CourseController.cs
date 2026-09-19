@@ -22,8 +22,6 @@ public class CourseController : ControllerBase
     public async Task<IActionResult> GetCourses(
         [FromQuery] string scope = "public",
         [FromQuery] string? search = null,
-        // #Tag-filter: đổi "string? tag" -> "List<string>? tags". ASP.NET Core tự bind
-        // nhiều query string cùng tên "tags=A&tags=B" vào List<string> này.
         [FromQuery] List<string>? tags = null,
         [FromQuery] string? sort = "newest",
         [FromQuery] string? status = null,
@@ -51,14 +49,11 @@ public class CourseController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            if (ex.Message == "PASSCODE_INVALID")
+            if (ex.Message == "PASSCODE_REQUIRED" || ex.Message == "PASSCODE_INVALID")
             {
-                return StatusCode(403, new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Sai hoặc thiếu passcode truy cập nội dung bảo vệ"
-                });
+                return PasscodeErrorResponse(ex.Message);
             }
+            // PRIVATE hoặc các trường hợp 403 khác -> trả nguyên message nghiệp vụ
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
     }
@@ -174,6 +169,22 @@ public class CourseController : ControllerBase
         {
             return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+    }
+
+    // Trả cùng định dạng errors[] mà CreateCourse/UpdateCourse đã dùng cho PasscodeRequiredException,
+    // để FE xử lý thống nhất 1 chỗ (usePasscodeAccess) cho mọi API có PROTECTED.
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
     }
 
     private int? GetCurrentUserId()

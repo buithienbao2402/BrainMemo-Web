@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebHoTroHocTap.Business.Exceptions;
+using WebHoTroHocTap.Business.Security;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
 using WebHoTroHocTap.DataAccess.Enums;
@@ -108,21 +109,15 @@ public class CourseService : ICourseService
         {
             query = query.Where(c => c.Enrollments.Any(e => e.UserId == currentUserId.Value));
         }
-        // scope "public" (mặc định, dùng cho Home + Explore): KHÔNG lọc theo AccessType nữa.
-        // Trước đây có `query = query.Where(c => c.AccessType == AccessType.PUBLIC)` ở đây,
-        // nhưng theo yêu cầu mới, listing phải hiển thị TẤT CẢ khóa học (PUBLIC/PRIVATE/PROTECTED).
-        // FE tự hiện icon khóa dựa vào field `accessType` đã có sẵn trong response bên dưới.
-        // Việc chặn nội dung thật (PRIVATE/PROTECTED) vẫn được enforce ở GetCourseByIdAsync khi
-        // user bấm vào xem chi tiết, nên không lộ dữ liệu nhạy cảm, chỉ lộ metadata (tên, ảnh bìa...).
+        // scope "public" (mặc định, dùng cho Home + Explore): KHÔNG lọc theo AccessType.
+        // Listing hiển thị TẤT CẢ khóa học (PUBLIC/PRIVATE/PROTECTED), FE tự hiện icon khóa
+        // dựa vào field `accessType`. Việc chặn nội dung thật vẫn enforce ở GetCourseByIdAsync.
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(c => c.Title.Contains(search) || c.Creator.FullName.Contains(search));
         }
 
-        // #Tag-filter: lọc theo NHIỀU tag cùng lúc, kiểu OR — khóa học hiện ra nếu có
-        // ÍT NHẤT 1 trong các tag được chọn. Tag lưu trong DB luôn ở dạng lowercase
-        // (xem ResolveTagsAsync), nên chuẩn hóa cleanTags về lowercase trước khi so khớp.
         if (tags != null && tags.Count > 0)
         {
             var cleanTags = tags
@@ -133,10 +128,9 @@ public class CourseService : ICourseService
 
             if (cleanTags.Count > 0)
             {
-                // MỚI: Lọc AND — Khóa học bắt buộc phải chứa TẤT CẢ các tag trong cleanTags
                 foreach (var tag in cleanTags)
                 {
-                    var currentTag = tag; // Tạo biến cục bộ tránh lỗi closure
+                    var currentTag = tag;
                     query = query.Where(c => c.CourseTags.Any(ct => ct.Tag.TagName == currentTag));
                 }
             }
@@ -201,17 +195,16 @@ public class CourseService : ICourseService
         bool isCreator = currentUserId.HasValue && course.CreatorId == currentUserId.Value;
         bool isEnrolled = currentUserId.HasValue && await _context.Enrollments.AnyAsync(e => e.UserId == currentUserId.Value && e.CourseId == courseId);
 
+        // PRIVATE: chỉ Creator hoặc Student đã enroll
         if (course.AccessType == AccessType.PRIVATE && !isCreator && !isEnrolled)
         {
             throw new UnauthorizedAccessException("Khóa học này là riêng tư.");
         }
 
+        // PROTECTED: Creator vào thẳng; mọi người khác (kể cả đã enroll) luôn phải đúng passcode
         if (course.AccessType == AccessType.PROTECTED && !isCreator)
         {
-            if (string.IsNullOrEmpty(passcodeHeader) || string.IsNullOrEmpty(course.Passcode) || !BCrypt.Net.BCrypt.Verify(passcodeHeader, course.Passcode))
-            {
-                throw new UnauthorizedAccessException("PASSCODE_INVALID");
-            }
+            PasscodeGuard.Verify(passcodeHeader, course.Passcode);
         }
 
         int participantsCount = await _context.Enrollments.CountAsync(e => e.CourseId == courseId);

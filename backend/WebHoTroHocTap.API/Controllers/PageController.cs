@@ -52,8 +52,10 @@ public class PageController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            if (ex.Message == "PASSCODE_INVALID")
-                return StatusCode(403, new ApiResponse<object> { Success = false, Message = "Sai hoặc thiếu passcode" });
+            if (ex.Message == "PASSCODE_REQUIRED" || ex.Message == "PASSCODE_INVALID")
+            {
+                return PasscodeErrorResponse(ex.Message);
+            }
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
     }
@@ -98,5 +100,19 @@ public class PageController : ControllerBase
         {
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+    }
+
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
     }
 }
