@@ -187,6 +187,7 @@ public class CourseController : ControllerBase
             Message = message,
             Errors = new object[] { new { field = "passcode", code, message } }
         });
+    }
     [HttpGet("{id}/dashboard")]
     [Authorize]
     public async Task<IActionResult> GetCourseDashboard(int id)

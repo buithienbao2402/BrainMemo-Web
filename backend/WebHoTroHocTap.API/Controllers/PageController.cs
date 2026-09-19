@@ -117,6 +117,9 @@ public class PageController : ControllerBase
             Message = message,
             Errors = new object[] { new { field = "passcode", code, message } }
         });
+
+    }
+
     [HttpPost("api/pages/{id}/complete")]
     [Authorize]
     public async Task<IActionResult> CompletePage(int id)

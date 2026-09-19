@@ -1,7 +1,8 @@
 // frontend/src/features/courses/pages/CourseDetailPage.tsx
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Grid, Stack, Loader, Alert, Center } from '@mantine/core';
+import { Grid, Stack, Loader, Alert, Center, Title, Text, Button } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
 import { AboutSection } from '../components/AboutSection';
 import { ChapterList } from '../components/ChapterList';
 import { CommentSection } from '../components/CommentSection';
@@ -19,18 +20,16 @@ export function CourseDetailPage() {
   const navigate = useNavigate();
   const courseId = Number(id);
 
-  // resetKey = courseId -> chuyển sang xem khóa học khác thì passcode cũ tự bị xóa
   const { passcode, modalOpened, invalidAttempt, handleError, isPasscodeError, submitPasscode, closeModal } =
     usePasscodeAccess(courseId);
 
   const { data: course, isLoading, isError, error } = useCourseDetail(courseId, passcode);
+  const { data: progress } = useCourseProgress(courseId);
+  const { mutateAsync: enroll, isPending: isEnrolling } = useEnrollCourse(courseId);
 
   useEffect(() => {
     if (isError) handleError(error);
   }, [isError, error, handleError]);
-  const { data: course, isLoading, isError, error } = useCourseDetail(courseId);
-  const { data: progress } = useCourseProgress(courseId);
-  const { mutateAsync: enroll, isPending: isEnrolling } = useEnrollCourse(courseId);
 
   if (isLoading) return <Center h={300}><Loader color="orange" /></Center>;
 
@@ -39,12 +38,16 @@ export function CourseDetailPage() {
     return <Alert color="red">{extractApiErrorMessage(error, 'Không thể tải khóa học.')}</Alert>;
   }
 
-  if (!course) {
-    // Đang chờ người dùng nhập passcode (PROTECTED) -> không render UI lỗi to đùng,
-    // chỉ hiện loader mờ phía sau Modal.
+  // CHẶN BẢO MẬT TUYỆT ĐỐI: Nếu dính lỗi passcode, khóa cứng UI, không cho render course bên dưới dù có cache
+  if (isPasscodeError(error)) {
     return (
-      <>
-        <Center h={300}><Loader color="orange" /></Center>
+      <Stack align="center" mt={100} gap="md">
+        <IconLock size={48} color="var(--mantine-color-orange-5)" />
+        <Title order={3}>Khóa học được bảo vệ</Title>
+        <Text c="dimmed">Khóa học này yêu cầu mật khẩu truy cập để xem nội dung.</Text>
+        <Button color="orange" onClick={() => handleError(error)}>
+          Nhập mật khẩu
+        </Button>
         <PasscodeModal
           opened={modalOpened}
           onClose={closeModal}
@@ -52,28 +55,29 @@ export function CourseDetailPage() {
           isInvalid={invalidAttempt}
           title="Khóa học được bảo vệ"
         />
-      </>
+      </Stack>
     );
+  }
+
+  if (!course) {
+    return <Center h={300}><Loader color="orange" /></Center>;
   }
 
   const sortedChapters = [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex);
 
-  // "Bắt đầu học": ghi danh (nếu chưa) rồi vào chương đầu tiên.
   const handleStartLearning = async () => {
     const firstChapter = sortedChapters[0];
-    if (!firstChapter) return; // khóa học chưa có chương nào
+    if (!firstChapter) return;
     try {
       if (!progress?.isEnrolled) {
         await enroll(undefined);
       }
       navigate(`/courses/${course.id}/learn/${firstChapter.id}`);
     } catch {
-      // Khóa học PROTECTED thiếu/sai passcode -> giữ nguyên trang, không điều hướng.
-      // (Trang này chỉ xem được nếu đã qua bước nhập passcode ở tầng CourseDetail, nên case này hiếm gặp.)
+      // Bỏ qua nếu lỗi
     }
   };
 
-  // "Học tiếp": vào đúng trang đang dở dang.
   const handleContinueLearning = () => {
     if (!progress?.currentChapterId) return;
     const path = progress.currentPageId
@@ -82,7 +86,6 @@ export function CourseDetailPage() {
     navigate(path);
   };
 
-  // Gắn cờ isCompleted/isCurrent vào từng chương để ChapterList hiện tick xanh + badge "ĐANG HỌC".
   const chaptersWithProgress = sortedChapters.map((ch) => ({
     ...ch,
     isCompleted: progress?.chapters.find((p) => p.chapterId === ch.id)?.isCompleted ?? false,
@@ -102,9 +105,11 @@ export function CourseDetailPage() {
               flashcardsCount={course.flashcardsCount}
               quizzesCount={course.quizzesCount}
               tags={course.tags}
-              progressPercent={0}
-              currentChapterOrderIndex={null}
+              progressPercent={progress?.progressPercent ?? 0}
+              currentChapterOrderIndex={progress?.currentChapterOrderIndex ?? null}
               onStartLearning={handleStartLearning}
+              onContinueLearning={handleContinueLearning}
+              isStartingLearning={isEnrolling}
             />
             <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
           </Stack>
@@ -119,7 +124,7 @@ export function CourseDetailPage() {
               participantsCount={course.participantsCount}
             />
             <AboutSection description={course.description} />
-            <ChapterList chapters={course.chapters} />
+            <ChapterList chapters={chaptersWithProgress} />
             <CommentSection courseId={course.id} />
           </Stack>
         </Grid.Col>
@@ -133,40 +138,5 @@ export function CourseDetailPage() {
         title="Khóa học được bảo vệ"
       />
     </>
-    <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
-      <Grid.Col span={{ base: 12, md: 4 }}>
-        <Stack gap="lg">
-          <CourseOverviewCard
-            coverImageUrl={course.coverImageUrl}
-            eyebrow={course.tags[0] ?? ''}
-            title={course.title}
-            chaptersCount={course.chaptersCount}
-            flashcardsCount={course.flashcardsCount}
-            quizzesCount={course.quizzesCount}
-            tags={course.tags}
-            progressPercent={progress?.progressPercent ?? 0}
-            currentChapterOrderIndex={progress?.currentChapterOrderIndex ?? null}
-            onStartLearning={handleStartLearning}
-            onContinueLearning={handleContinueLearning}
-            isStartingLearning={isEnrolling}
-          />
-          <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
-        </Stack>
-      </Grid.Col>
-
-      <Grid.Col span={{ base: 12, md: 8 }}>
-        <Stack gap="lg">
-          <CourseHeader
-            title={course.title}
-            creatorName={course.creator.fullName}
-            updatedAt={course.updatedAt}
-            participantsCount={course.participantsCount}
-          />
-          <AboutSection description={course.description} />
-          <ChapterList chapters={chaptersWithProgress} />
-          <CommentSection courseId={course.id} />
-        </Stack>
-      </Grid.Col>
-    </Grid>
   );
 }
