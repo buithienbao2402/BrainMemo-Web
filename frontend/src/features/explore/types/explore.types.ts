@@ -14,6 +14,8 @@ export interface CourseListItem {
   commentsCount?: number;
   flashcardsCount?: number;
   quizzesCount?: number;
+  latestChapterTitle: string | null;
+  latestChapterPublishedAt: string | null;
 }
 
 export interface CourseListResponse {

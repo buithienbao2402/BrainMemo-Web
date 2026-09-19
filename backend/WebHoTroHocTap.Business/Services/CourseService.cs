@@ -174,6 +174,21 @@ public class CourseService : ICourseService
                 updatedAt = c.UpdatedAt,
                 chapterCount = c.Chapters.Count,
                 participantsCount = c.Enrollments.Count,
+                // MỚI — phục vụ hiển thị "chương mới đăng + thời gian đăng" ở Home "MỚI CẬP NHẬT".
+                // Chỉ tính chương ĐÃ ĐĂNG (IsDraft = false), lấy chương có CreatedAt mới nhất.
+                // Cast sang (DateTime?) trước FirstOrDefault() để trả về null đúng nghĩa khi khóa học
+                // chưa có chương nào đã đăng, thay vì rơi về DateTime.MinValue (cùng lớp vấn đề với
+                // pattern MaxAsync trên sequence có thể rỗng đã ghi chú trước đây).
+                latestChapterTitle = c.Chapters
+                    .Where(ch => !ch.IsDraft)
+                    .OrderByDescending(ch => ch.CreatedAt)
+                    .Select(ch => ch.Title)
+                    .FirstOrDefault(),
+                latestChapterPublishedAt = c.Chapters
+                    .Where(ch => !ch.IsDraft)
+                    .OrderByDescending(ch => ch.CreatedAt)
+                    .Select(ch => (DateTime?)ch.CreatedAt)
+                    .FirstOrDefault(),
             })
             .ToListAsync();
 
