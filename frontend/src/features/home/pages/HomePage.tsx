@@ -6,6 +6,7 @@ import { useLearningDashboard } from '@/features/learning-dashboard/hooks/useLea
 import { CourseMiniCard } from '../components/CourseMiniCard';
 import { ContinueLearningCard } from '../components/ContinueLearningCard';
 import { SidebarPlaceholderCard } from '../components/SidebarPlaceholderCard';
+import { formatPostedTime } from '@/features/courses/utils/format';
 
 function SectionHeader({ title, onSeeMore }: { title: string; onSeeMore: () => void }) {
     return (
@@ -55,15 +56,43 @@ export function HomePage() {
                             {recent.isLoading ? <Loader color="orange" /> : (
                                 <Stack gap="sm">
                                     {recent.data?.items.map((c) => (
-                                        <Group key={c.courseId} justify="space-between" style={{ cursor: 'pointer' }} onClick={() => navigate(`/courses/${c.courseId}`)}>
-                                            <Stack gap={0}>
-                                                <Text size="sm" fw={600}>{c.title}</Text>
-                                                <Text size="xs" c="dimmed">{c.creator.fullName}</Text>
+                                        <Group
+                                            key={c.courseId}
+                                            justify="space-between"
+                                            wrap="nowrap"
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={() => navigate(`/courses/${c.courseId}`)}
+                                        >
+                                            {/* Trái: tên khóa học + tác giả */}
+                                            <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                                                <Text size="sm" fw={600} lineClamp={1}>{c.title}</Text>
+                                                <Text size="xs" c="dimmed" lineClamp={1}>{c.creator.fullName}</Text>
                                             </Stack>
-                                            <Text size="xs" c="dimmed">
-                                                <IconUsers size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                                {c.participantsCount} học viên
+
+                                            {/* Giữa: tên chương mới nhất */}
+                                            <Text
+                                                size="xs"
+                                                c="orange"
+                                                fw={500}
+                                                ta="center"
+                                                lineClamp={1}
+                                                style={{ flex: 1, minWidth: 0 }}
+                                            >
+                                                {c.latestChapterTitle ?? 'Chưa có chương nào'}
                                             </Text>
+
+                                            {/* Phải: số học viên + thời gian cập nhật */}
+                                            <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
+                                                <Text size="xs" c="dimmed">
+                                                    <IconUsers size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                                    {c.participantsCount} học viên
+                                                </Text>
+                                                {c.latestChapterPublishedAt && (
+                                                    <Text size="xs" c="dimmed">
+                                                        {formatPostedTime(c.latestChapterPublishedAt)}
+                                                    </Text>
+                                                )}
+                                            </Stack>
                                         </Group>
                                     ))}
                                 </Stack>
