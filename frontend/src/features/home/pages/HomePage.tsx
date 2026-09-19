@@ -23,8 +23,6 @@ export function HomePage() {
     const recent = useRecentlyUpdatedCourses();
     const learningDashboard = useLearningDashboard();
 
-    const continueLearningCourse = learningDashboard.data?.courses.learning[0];
-
     return (
         <Box p="lg">
             <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
@@ -79,7 +77,7 @@ export function HomePage() {
                         {learningDashboard.isLoading ? (
                             <Paper shadow="sm" radius="md" p="lg"><Loader color="orange" size="sm" /></Paper>
                         ) : (
-                            <ContinueLearningCard course={continueLearningCourse} />
+                            <ContinueLearningCard courses={learningDashboard.data?.courses.learning ?? []} />
                         )}
                         <SidebarPlaceholderCard icon={<IconTrophy size={28} />} title="Tổng Số Học Viên" />
                         <SidebarPlaceholderCard icon={<IconCrown size={28} />} title="Top Creator" />
