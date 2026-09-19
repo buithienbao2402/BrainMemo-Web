@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -8,7 +9,6 @@ using System.Text;
 using WebHoTroHocTap.Business.DTOs;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace WebHoTroHocTap.Business.Services;
 
@@ -78,7 +78,8 @@ public class AuthService : IAuthService
             {
                 UserId = user.UserId,
                 Email = user.Email,
-                FullName = user.FullName ?? user.Email
+                FullName = user.FullName ?? user.Email,
+                AvatarUrl = user.AvatarUrl
             }
         };
     }
@@ -103,10 +104,10 @@ public class AuthService : IAuthService
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
         var claims = new List<Claim>
-    {
-        new Claim("userId", user.UserId.ToString()),
-        new Claim("email", user.Email)
-    };
+        {
+            new Claim("userId", user.UserId.ToString()),
+            new Claim("email", user.Email)
+        };
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -122,12 +123,12 @@ public class AuthService : IAuthService
     }
 
     // ==========================================
-    // LUỒNG ĐĂNG KÝ (REQUEST OTP & VERIFY OTP)[cite: 1]
+    // LUỒNG ĐĂNG KÝ (REQUEST OTP & VERIFY OTP)
     // ==========================================
 
     public async Task<(bool IsSuccess, string ErrorMessage)> RequestOtpAsync(string email, string password, string fullName)
     {
-        // 1. Kiểm tra email đã tồn tại trong Database chưa[cite: 2]
+        // 1. Kiểm tra email đã tồn tại trong Database chưa
         var isEmailExist = await _context.Users.AnyAsync(u => u.Email == email);
         if (isEmailExist)
         {
@@ -163,10 +164,10 @@ public class AuthService : IAuthService
             return (false, "Mã OTP không chính xác.");
         }
 
-        // 2. Băm mật khẩu bằng BCrypt[cite: 1]
+        // 2. Băm mật khẩu bằng BCrypt
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(cachedData.Password);
 
-        // 3. Tạo User mới lưu vào Database[cite: 1, 2]
+        // 3. Tạo User mới lưu vào Database
         var newUser = new User
         {
             Email = cachedData.Email,

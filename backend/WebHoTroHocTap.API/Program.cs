@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -28,7 +29,6 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IProgressService, ProgressService>();
-
 
 // 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -120,15 +120,11 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-// Tự động khởi tạo các thư mục lưu file local nếu chưa có
+// Tạo thư mục upload (idempotent - Directory.CreateDirectory tự động bỏ qua nếu thư mục đã tồn tại)
 var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
 foreach (var subFolder in new[] { "images", "audios", "videos" })
 {
-    var folderPath = Path.Combine(uploadsRoot, subFolder);
-    if (!Directory.Exists(folderPath))
-    {
-        Directory.CreateDirectory(folderPath);
-    }
+    Directory.CreateDirectory(Path.Combine(uploadsRoot, subFolder));
 }
 
 // 5. Cấu hình HTTP Request Pipeline (Middleware)
@@ -143,8 +139,13 @@ app.UseHttpsRedirection();
 // Cho phép CORS trước file tĩnh để trình duyệt đọc ảnh/audio/video không bị chặn
 app.UseCors("AllowFrontend");
 
-// Kích hoạt phục vụ file tĩnh từ thư mục wwwroot
-app.UseStaticFiles();
+// Không dùng UseStaticFiles() mặc định: WebRootPath chốt lúc Build(), nếu wwwroot chưa tồn tại
+// thì lần chạy đầu sẽ không phục vụ file nào -> ảnh 404.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsRoot),
+    RequestPath = "/uploads"
+});
 
 // QUAN TRỌNG: UseAuthentication phải nằm TRƯỚC UseAuthorization
 app.UseAuthentication();

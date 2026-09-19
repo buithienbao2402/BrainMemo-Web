@@ -9,81 +9,63 @@ namespace WebHoTroHocTap.API.Controllers;
 [Route("api/media")]
 public class MediaController : ControllerBase
 {
-    private readonly IWebHostEnvironment _env;
+    private const long MB = 1024 * 1024;
 
-    private static readonly Dictionary<string, string[]> AllowedExtensions = new()
+    private sealed record MediaRule(string[] Extensions, string Folder, long MaxBytes);
+
+    private static readonly Dictionary<string, MediaRule> Rules = new()
     {
-        { "IMAGE", new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" } },
-        { "AUDIO", new[] { ".mp3", ".wav", ".ogg", ".m4a" } },
-        { "VIDEO", new[] { ".mp4", ".webm", ".mov", ".mkv" } }
+        ["IMAGE"] = new(new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }, "images", 5 * MB),
+        ["AUDIO"] = new(new[] { ".mp3", ".wav", ".ogg", ".m4a" }, "audios", 20 * MB),
+        ["VIDEO"] = new(new[] { ".mp4", ".webm", ".mov", ".mkv" }, "videos", 100 * MB),
     };
 
-    public MediaController(IWebHostEnvironment env)
+    private readonly IWebHostEnvironment _env;
+    private readonly ILogger<MediaController> _logger;
+
+    public MediaController(IWebHostEnvironment env, ILogger<MediaController> logger)
     {
         _env = env;
+        _logger = logger;
     }
 
     [HttpPost("upload")]
     [Authorize]
-    [RequestSizeLimit(100 * 1024 * 1024)] // 100MB
-    public async Task<IActionResult> UploadMedia([FromForm] MediaUploadRequestDto request)
+    [RequestSizeLimit(100 * MB)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 100 * MB)]
+    public async Task<IActionResult> UploadMedia([FromForm] MediaUploadRequestDto request, CancellationToken ct)
     {
         try
         {
             var file = request.File;
             if (file == null || file.Length == 0)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Vui lòng chọn tệp tin để tải lên."
-                });
-            }
+                return BadRequest(Fail("Vui lòng chọn tệp tin để tải lên."));
 
-            var type = (request.MediaType ?? "IMAGE").ToUpper();
-            if (!AllowedExtensions.ContainsKey(type))
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Loại media không hợp lệ. Chỉ chấp nhận IMAGE, AUDIO, VIDEO."
-                });
-            }
+            var type = (request.MediaType ?? "IMAGE").Trim().ToUpperInvariant();
+            if (!Rules.TryGetValue(type, out var rule))
+                return BadRequest(Fail("Loại media không hợp lệ. Chỉ chấp nhận IMAGE, AUDIO, VIDEO."));
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions[type].Contains(ext))
+            if (!rule.Extensions.Contains(ext))
+                return BadRequest(Fail($"Định dạng tệp {ext} không được hỗ trợ cho loại {type}."));
+
+            if (file.Length > rule.MaxBytes)
+                return BadRequest(Fail($"Tệp {type} tối đa {rule.MaxBytes / MB}MB."));
+
+            var folderPath = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", rule.Folder);
+            Directory.CreateDirectory(folderPath);
+
+            // Không dùng tên gốc: tránh ký tự lạ/dấu tiếng Việt làm hỏng URL và vượt 500 ký tự của cột DB
+            var storedName = $"{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(folderPath, storedName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Định dạng tệp {ext} không được hỗ trợ cho loại {type}."
-                });
+                await file.CopyToAsync(stream, ct);
             }
 
-            string subFolder = type switch
-            {
-                "IMAGE" => "images",
-                "AUDIO" => "audios",
-                "VIDEO" => "videos",
-                _ => "others"
-            };
-
-            string uploadsFolder = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", subFolder);
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            string uniqueFileName = $"{Guid.NewGuid():N}_{Path.GetFileName(file.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            string relativeUrl = $"/uploads/{subFolder}/{uniqueFileName}";
-            string fullUrl = $"{Request.Scheme}://{Request.Host}{relativeUrl}";
+            var objectKey = $"/uploads/{rule.Folder}/{storedName}";
+            var fullUrl = $"{Request.Scheme}://{Request.Host}{objectKey}";
 
             return Ok(new ApiResponse<MediaUploadResponseDto>
             {
@@ -92,6 +74,7 @@ public class MediaController : ControllerBase
                 Data = new MediaUploadResponseDto
                 {
                     Url = fullUrl,
+                    ObjectKey = objectKey,
                     FileName = file.FileName,
                     MediaType = type,
                     FileSize = file.Length
@@ -100,11 +83,10 @@ public class MediaController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new ApiResponse<object>
-            {
-                Success = false,
-                Message = $"Lỗi máy chủ: {ex.Message}"
-            });
+            _logger.LogError(ex, "Upload media thất bại");
+            return StatusCode(500, Fail("Lỗi máy chủ khi lưu tệp. Vui lòng thử lại."));
         }
     }
+
+    private static ApiResponse<object> Fail(string message) => new() { Success = false, Message = message };
 }
