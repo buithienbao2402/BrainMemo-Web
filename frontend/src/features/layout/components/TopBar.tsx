@@ -44,10 +44,8 @@ export function TopBar() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { mutate: logout } = useLogout();
-  const { data: unreadCount = 0 } = useUnreadNotificationsCount();
-  const { user, clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [searchValue, setSearchValue] = useState('');
 

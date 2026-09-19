@@ -3,6 +3,7 @@ import { Center, Loader, Alert } from '@mantine/core';
 import { ReadingLayout } from '@/app/layouts/ReadingLayout';
 import { useChapterDetail } from '../hooks/useChapterDetail';
 import { usePageDetail } from '../hooks/usePageDetail';
+import { useChapterProgress } from '../hooks/useProgress';
 import { useCourseDetail } from '@/features/courses/hooks/useCourseDetail';
 import { ContentRenderer } from '../components/ContentRenderer';
 
@@ -17,14 +18,12 @@ export function ChapterReadingPage() {
   const { data: chapter, isLoading: loadingChapter, isError: chapterError, error: chapterErrObj } =
     useChapterDetail(Number(chapterId));
   const { data: course } = useCourseDetail(Number(courseId));
+  const { data: chapterProgress } = useChapterProgress(Number(chapterId));
 
   const sortedPages = chapter ? [...chapter.pages].sort((a, b) => a.orderIndex - b.orderIndex) : [];
   const activePageId = pageId ? Number(pageId) : sortedPages[0]?.id;
   const { data: page, isLoading: loadingPage } = usePageDetail(activePageId);
 
-  // MỚI: danh sách chương của khóa học (đã có sẵn từ GET /api/courses/{id}, dùng chung
-  // với useCourseDetail phía trên) -> tìm chương liền trước/liền sau chương đang đọc.
-  // Đây là điều hướng CHƯƠNG, khác hoàn toàn với điều hướng TRANG (goToPage) bên dưới.
   const sortedChapters = course ? [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex) : [];
   const currentChapterIndex = sortedChapters.findIndex((c) => c.id === Number(chapterId));
   const prevChapter = currentChapterIndex > 0 ? sortedChapters[currentChapterIndex - 1] : null;
@@ -33,7 +32,6 @@ export function ChapterReadingPage() {
       ? sortedChapters[currentChapterIndex + 1]
       : null;
 
-  // Nhảy chương mới -> không kèm pageId, ChapterReadingPage sẽ tự vào trang đầu của chương đó
   const goToChapter = (id: number) => navigate(`/courses/${courseId}/learn/${id}`);
 
   if (loadingChapter) return <Center h={300}><Loader color="orange" /></Center>;
@@ -56,7 +54,7 @@ export function ChapterReadingPage() {
     <ReadingLayout
       courseTitle={course?.title ?? ''}
       chapterTitle={chapter.title}
-      progressPercent={0}
+      progressPercent={chapterProgress?.progressPercent ?? 0}
       currentPageIndex={currentIndex + 1}
       totalPages={totalPages}
       isPrevDisabled={currentIndex <= 0}
@@ -64,7 +62,6 @@ export function ChapterReadingPage() {
       onBack={() => navigate(`/courses/${courseId}`)}
       onPrev={() => sortedPages[currentIndex - 1] && goToPage(sortedPages[currentIndex - 1].id)}
       onNext={() => sortedPages[currentIndex + 1] && goToPage(sortedPages[currentIndex + 1].id)}
-      // MỚI: cặp handler riêng cho nút Chương trước / Chương tiếp ở topbar
       onPrevChapter={prevChapter ? () => goToChapter(prevChapter.id) : undefined}
       onNextChapter={nextChapter ? () => goToChapter(nextChapter.id) : undefined}
       isPrevChapterDisabled={!prevChapter}
@@ -76,7 +73,7 @@ export function ChapterReadingPage() {
       {loadingPage || !page ? (
         <Center h={200}><Loader color="orange" /></Center>
       ) : (
-        <ContentRenderer blocks={page.blocks} />
+        <ContentRenderer blocks={page.blocks} pageId={page.id} chapterId={Number(chapterId)} />
       )}
     </ReadingLayout>
   );

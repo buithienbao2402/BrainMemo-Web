@@ -1,9 +1,8 @@
 // File: src/features/learning/components/QuizBlockView.tsx
-// Nhận toàn bộ questions của 1 QuizBlock (1 block có thể chứa nhiều câu hỏi — đúng contract mục 9).
-// Mỗi câu hỏi tự quản lý state riêng (selected/submitted) vì học viên có thể nộp từng câu độc lập.
-// LƯU Ý: Việc so isCorrect ở đây là check CLIENT-SIDE trên mock data để demo UI.
-// Ở bản thật, phải gọi POST /api/pages/{id}/quiz/submit (mục 10) — BE chấm điểm, KHÔNG lộ isCorrect
-// trước khi nộp. Giai đoạn 4 sẽ thay state cục bộ này bằng gọi API thật.
+// Giữ nguyên UX chấm điểm tại chỗ (client-side, dùng option.isCorrect có sẵn trong data trang) để
+// không phá trải nghiệm hiện tại — nút "Xem đáp án" (đổi tên từ "Nộp bài" cũ để tránh nhầm với nút
+// nộp-lưu-tiến-độ mới ở ContentRenderer). THÊM: mỗi khi chọn đáp án, báo lên component cha qua
+// onAnswerChange để cha gom lại toàn trang và gọi API thật lưu tiến độ (2 luồng độc lập nhau).
 
 import { useState } from 'react';
 import { Box, Text, Radio, Button, Stack, Group, ThemeIcon, Alert } from '@mantine/core';
@@ -13,21 +12,32 @@ import classes from './QuizBlockView.module.css';
 
 interface QuizBlockViewProps {
   questions: QuizQuestion[];
+  onAnswerChange?: (questionId: number, optionId: number) => void;
 }
 
-// Tách riêng từng câu hỏi thành sub-component để state không bị lẫn giữa các câu.
-function QuizQuestionItem({ question }: { question: QuizQuestion }) {
+function QuizQuestionItem({
+  question,
+  onAnswerChange,
+}: {
+  question: QuizQuestion;
+  onAnswerChange?: (questionId: number, optionId: number) => void;
+}) {
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const selectedOption = question.options.find((o) => o.optionId === selectedOptionId);
   const isCorrect = submitted && selectedOption?.isCorrect === true;
 
-  // Class trạng thái cho từng option: chỉ tô màu SAU khi đã submit
+  const handleSelect = (value: string) => {
+    const optionId = Number(value);
+    setSelectedOptionId(optionId);
+    onAnswerChange?.(question.questionId, optionId);
+  };
+
   const getOptionClass = (optionId: number, optionIsCorrect?: boolean) => {
     if (!submitted) return classes.option;
-    if (optionIsCorrect) return `${classes.option} ${classes.optionCorrect}`; // Luôn tô xanh đáp án đúng
-    if (optionId === selectedOptionId) return `${classes.option} ${classes.optionWrong}`; // Tô đỏ nếu chọn sai
+    if (optionIsCorrect) return `${classes.option} ${classes.optionCorrect}`;
+    if (optionId === selectedOptionId) return `${classes.option} ${classes.optionWrong}`;
     return classes.option;
   };
 
@@ -37,13 +47,12 @@ function QuizQuestionItem({ question }: { question: QuizQuestion }) {
         {question.questionText}
       </Text>
 
-      <Radio.Group value={selectedOptionId?.toString() ?? ''} onChange={(v) => setSelectedOptionId(Number(v))}>
+      <Radio.Group value={selectedOptionId?.toString() ?? ''} onChange={handleSelect}>
         <Stack gap="xs">
           {question.options.map((option) => (
             <label key={option.optionId} className={getOptionClass(option.optionId, option.isCorrect)}>
               <Group justify="space-between" wrap="nowrap">
                 <Radio value={option.optionId.toString()} label={option.optionText} disabled={submitted} color="orange" />
-                {/* Icon kết quả chỉ hiện sau khi nộp */}
                 {submitted && option.isCorrect && (
                   <ThemeIcon color="green" variant="light" size="sm" radius="xl">
                     <IconCheck size={14} />
@@ -62,29 +71,24 @@ function QuizQuestionItem({ question }: { question: QuizQuestion }) {
 
       {!submitted ? (
         <Button mt="md" color="orange" size="xs" disabled={selectedOptionId === null} onClick={() => setSubmitted(true)}>
-          Nộp bài
+          Xem đáp án
         </Button>
       ) : (
-        <Alert
-          mt="md"
-          color={isCorrect ? 'green' : 'red'}
-          icon={<IconBulb size={16} />}
-          variant="light"
-        >
-          {isCorrect 
-            ? (question.explanation ?? 'Chính xác!') 
-            : 'Chưa chính xác, đáp án đúng là: ' + (question.options.find(o => o.isCorrect)?.optionText ?? 'N/A')}
+        <Alert mt="md" color={isCorrect ? 'green' : 'red'} icon={<IconBulb size={16} />} variant="light">
+          {isCorrect
+            ? (question.explanation ?? 'Chính xác!')
+            : 'Chưa chính xác, đáp án đúng là: ' + (question.options.find((o) => o.isCorrect)?.optionText ?? 'N/A')}
         </Alert>
       )}
     </Box>
   );
 }
 
-export function QuizBlockView({ questions }: QuizBlockViewProps) {
+export function QuizBlockView({ questions, onAnswerChange }: QuizBlockViewProps) {
   return (
     <Box className={classes.wrapper}>
       {questions.map((q) => (
-        <QuizQuestionItem key={q.questionId} question={q} />
+        <QuizQuestionItem key={q.questionId} question={q} onAnswerChange={onAnswerChange} />
       ))}
     </Box>
   );

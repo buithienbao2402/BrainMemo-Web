@@ -314,4 +314,33 @@ public class CourseService : ICourseService
 
         return existingTags.Concat(newTags).ToList();
     }
+
+    public async Task<object> GetCourseDashboardAsync(int courseId, int requestingUserId)
+    {
+        var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+        if (course == null) throw new KeyNotFoundException("Khóa học không tồn tại.");
+        if (course.CreatorId != requestingUserId)
+            throw new UnauthorizedAccessException("Chỉ người tạo khóa học mới có quyền xem dashboard.");
+
+        var enrollments = await _context.Enrollments
+            .Include(e => e.User)
+            .Where(e => e.CourseId == courseId)
+            .OrderByDescending(e => e.ProgressPercent)
+            .ToListAsync();
+
+        int participantsCount = enrollments.Count;
+        int completedCount = enrollments.Count(e => e.Status == "COMPLETED");
+        int commentsCount = await _context.Comments.CountAsync(c => c.CourseId == courseId);
+
+        var students = enrollments.Select(e => new
+        {
+            userId = e.UserId,
+            fullName = e.User.FullName,
+            avatarUrl = e.User.AvatarUrl,
+            progressPercent = e.ProgressPercent,
+            enrolledAt = e.EnrolledAt
+        }).ToList();
+
+        return new { participantsCount, completedCount, commentsCount, students };
+    }
 }

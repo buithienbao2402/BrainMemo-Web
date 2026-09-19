@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { Box, Grid, Stack, Group, Text, ScrollArea, Loader, Paper } from '@mantine/core';
-import { IconBook2, IconTrophy, IconCrown, IconUsers } from '@tabler/icons-react';
+import { IconTrophy, IconCrown, IconUsers } from '@tabler/icons-react';
 import { useNewestCourses, useCompletedCourses, useRecentlyUpdatedCourses } from '../hooks/useHomeSections';
+import { useLearningDashboard } from '@/features/learning-dashboard/hooks/useLearningDashboard';
 import { CourseMiniCard } from '../components/CourseMiniCard';
+import { ContinueLearningCard } from '../components/ContinueLearningCard';
 import { SidebarPlaceholderCard } from '../components/SidebarPlaceholderCard';
 
 function SectionHeader({ title, onSeeMore }: { title: string; onSeeMore: () => void }) {
@@ -19,6 +21,9 @@ export function HomePage() {
     const newest = useNewestCourses();
     const completed = useCompletedCourses();
     const recent = useRecentlyUpdatedCourses();
+    const learningDashboard = useLearningDashboard();
+
+    const continueLearningCourse = learningDashboard.data?.courses.learning[0];
 
     return (
         <Box p="lg">
@@ -71,12 +76,15 @@ export function HomePage() {
 
                 <Grid.Col span={{ base: 12, md: 4 }}>
                     <Stack gap="lg">
-                        <SidebarPlaceholderCard icon={<IconBook2 size={28} />} title="Tiếp Tục Học" />
+                        {learningDashboard.isLoading ? (
+                            <Paper shadow="sm" radius="md" p="lg"><Loader color="orange" size="sm" /></Paper>
+                        ) : (
+                            <ContinueLearningCard course={continueLearningCourse} />
+                        )}
                         <SidebarPlaceholderCard icon={<IconTrophy size={28} />} title="Tổng Số Học Viên" />
                         <SidebarPlaceholderCard icon={<IconCrown size={28} />} title="Top Creator" />
                     </Stack>
                 </Grid.Col>
-
             </Grid>
         </Box>
     );

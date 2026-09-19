@@ -10,10 +10,12 @@ namespace WebHoTroHocTap.API.Controllers;
 public class ChapterController : ControllerBase
 {
     private readonly IChapterService _chapterService;
+    private readonly IProgressService _progressService;
 
-    public ChapterController(IChapterService chapterService)
+    public ChapterController(IChapterService chapterService, IProgressService progressService)
     {
         _chapterService = chapterService;
+        _progressService = progressService;
     }
 
     // Lấy danh sách chương: ?isDraft=false (đã đăng), ?isDraft=true (nháp)
@@ -106,5 +108,21 @@ public class ChapterController : ControllerBase
     {
         var claim = User.FindFirst("userId");
         return claim != null ? int.Parse(claim.Value) : null;
+    }
+
+    [HttpGet("api/chapters/{id}/progress")]
+    [Authorize]
+    public async Task<IActionResult> GetChapterProgress(int id)
+    {
+        int userId = int.Parse(User.FindFirst("userId")!.Value);
+        try
+        {
+            var result = await _progressService.GetChapterProgressAsync(id, userId);
+            return Ok(new ApiResponse<object> { Success = true, Message = "OK", Data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
     }
 }

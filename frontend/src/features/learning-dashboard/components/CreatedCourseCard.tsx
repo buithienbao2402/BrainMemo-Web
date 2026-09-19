@@ -1,4 +1,4 @@
-import { Paper, Group, Stack, Text, ThemeIcon, Button } from '@mantine/core';
+import { Paper, Group, Text, ThemeIcon, Button } from '@mantine/core';
 import {
   IconBrandPython, IconMathFunction, IconMessageCircle, IconAtom, IconBulb, IconBrandJavascript,
   IconArrowRight, type Icon,
