@@ -96,7 +96,7 @@ export function ChapterReadingPage() {
       <ReadingLayout
         courseTitle={course?.title ?? ''}
         chapterTitle={chapter.title}
-        progressPercent={0}
+        progressPercent={chapterProgress?.progressPercent ?? 0}
         currentPageIndex={currentIndex + 1}
         totalPages={totalPages}
         isPrevDisabled={currentIndex <= 0}
@@ -119,7 +119,7 @@ export function ChapterReadingPage() {
             <Center h={200}><Loader color="orange" /></Center>
           )
         ) : (
-          <ContentRenderer blocks={page.blocks} />
+          <ContentRenderer blocks={page.blocks} pageId={page.id} chapterId={Number(chapterId)} />
         )}
       </ReadingLayout>
 
@@ -131,30 +131,5 @@ export function ChapterReadingPage() {
         title="Chương học được bảo vệ"
       />
     </>
-    <ReadingLayout
-      courseTitle={course?.title ?? ''}
-      chapterTitle={chapter.title}
-      progressPercent={chapterProgress?.progressPercent ?? 0}
-      currentPageIndex={currentIndex + 1}
-      totalPages={totalPages}
-      isPrevDisabled={currentIndex <= 0}
-      isNextDisabled={currentIndex >= totalPages - 1}
-      onBack={() => navigate(`/courses/${courseId}`)}
-      onPrev={() => sortedPages[currentIndex - 1] && goToPage(sortedPages[currentIndex - 1].id)}
-      onNext={() => sortedPages[currentIndex + 1] && goToPage(sortedPages[currentIndex + 1].id)}
-      onPrevChapter={prevChapter ? () => goToChapter(prevChapter.id) : undefined}
-      onNextChapter={nextChapter ? () => goToChapter(nextChapter.id) : undefined}
-      isPrevChapterDisabled={!prevChapter}
-      isNextChapterDisabled={!nextChapter}
-      tocPages={tocPages}
-      currentPageId={activePageId}
-      onNavigateToPage={goToPage}
-    >
-      {loadingPage || !page ? (
-        <Center h={200}><Loader color="orange" /></Center>
-      ) : (
-        <ContentRenderer blocks={page.blocks} pageId={page.id} chapterId={Number(chapterId)} />
-      )}
-    </ReadingLayout>
   );
 }

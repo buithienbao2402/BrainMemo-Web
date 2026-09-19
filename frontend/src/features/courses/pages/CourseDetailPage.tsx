@@ -28,7 +28,7 @@ export function CourseDetailPage() {
   useEffect(() => {
     if (isError) handleError(error);
   }, [isError, error, handleError]);
-  const { data: course, isLoading, isError, error } = useCourseDetail(courseId);
+
   const { data: progress } = useCourseProgress(courseId);
   const { mutateAsync: enroll, isPending: isEnrolling } = useEnrollCourse(courseId);
 
@@ -102,9 +102,11 @@ export function CourseDetailPage() {
               flashcardsCount={course.flashcardsCount}
               quizzesCount={course.quizzesCount}
               tags={course.tags}
-              progressPercent={0}
-              currentChapterOrderIndex={null}
+              progressPercent={progress?.progressPercent ?? 0}
+              currentChapterOrderIndex={progress?.currentChapterOrderIndex ?? null}
               onStartLearning={handleStartLearning}
+              onContinueLearning={handleContinueLearning}
+              isStartingLearning={isEnrolling}
             />
             <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
           </Stack>
@@ -119,7 +121,7 @@ export function CourseDetailPage() {
               participantsCount={course.participantsCount}
             />
             <AboutSection description={course.description} />
-            <ChapterList chapters={course.chapters} />
+            <ChapterList chapters={chaptersWithProgress} />
             <CommentSection courseId={course.id} />
           </Stack>
         </Grid.Col>
@@ -133,40 +135,5 @@ export function CourseDetailPage() {
         title="Khóa học được bảo vệ"
       />
     </>
-    <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
-      <Grid.Col span={{ base: 12, md: 4 }}>
-        <Stack gap="lg">
-          <CourseOverviewCard
-            coverImageUrl={course.coverImageUrl}
-            eyebrow={course.tags[0] ?? ''}
-            title={course.title}
-            chaptersCount={course.chaptersCount}
-            flashcardsCount={course.flashcardsCount}
-            quizzesCount={course.quizzesCount}
-            tags={course.tags}
-            progressPercent={progress?.progressPercent ?? 0}
-            currentChapterOrderIndex={progress?.currentChapterOrderIndex ?? null}
-            onStartLearning={handleStartLearning}
-            onContinueLearning={handleContinueLearning}
-            isStartingLearning={isEnrolling}
-          />
-          <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
-        </Stack>
-      </Grid.Col>
-
-      <Grid.Col span={{ base: 12, md: 8 }}>
-        <Stack gap="lg">
-          <CourseHeader
-            title={course.title}
-            creatorName={course.creator.fullName}
-            updatedAt={course.updatedAt}
-            participantsCount={course.participantsCount}
-          />
-          <AboutSection description={course.description} />
-          <ChapterList chapters={chaptersWithProgress} />
-          <CommentSection courseId={course.id} />
-        </Stack>
-      </Grid.Col>
-    </Grid>
   );
 }

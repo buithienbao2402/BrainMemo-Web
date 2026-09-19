@@ -63,12 +63,6 @@ public class PageController : ControllerBase
         }
     }
 
-    private int? GetCurrentUserId()
-    {
-        var claim = User.FindFirst("userId");
-        return claim != null && int.TryParse(claim.Value, out int userId) ? userId : null;
-    }
-
     [HttpPut("api/pages/{id}")]
     [Authorize]
     public async Task<IActionResult> UpdatePage(int id, [FromBody] PageRequestDto dto)
@@ -105,18 +99,6 @@ public class PageController : ControllerBase
         }
     }
 
-    private IActionResult PasscodeErrorResponse(string code)
-    {
-        string message = code == "PASSCODE_REQUIRED"
-            ? "Nội dung này yêu cầu mật khẩu truy cập."
-            : "Mật khẩu truy cập không đúng.";
-
-        return StatusCode(403, new ApiResponse<object>
-        {
-            Success = false,
-            Message = message,
-            Errors = new object[] { new { field = "passcode", code, message } }
-        });
     [HttpPost("api/pages/{id}/complete")]
     [Authorize]
     public async Task<IActionResult> CompletePage(int id)
@@ -163,5 +145,25 @@ public class PageController : ControllerBase
         {
             return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
         }
+    }
+
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var claim = User.FindFirst("userId");
+        return claim != null && int.TryParse(claim.Value, out int userId) ? userId : null;
     }
 }
