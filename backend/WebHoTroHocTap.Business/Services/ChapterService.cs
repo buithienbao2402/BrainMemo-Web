@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebHoTroHocTap.Business.DTOs.Chapter;
+using WebHoTroHocTap.Business.Security;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
 
@@ -64,7 +65,6 @@ public class ChapterService : IChapterService
 
         bool isCreator = currentUserId.HasValue && course.CreatorId == currentUserId.Value;
 
-        // Nếu xem danh sách chương nháp thì BẮT BUỘC phải là tác giả của khóa học
         if (isDraft && !isCreator)
         {
             throw new UnauthorizedAccessException("Bạn không có quyền xem danh sách chương nháp của khóa học này.");
@@ -99,7 +99,7 @@ public class ChapterService : IChapterService
         if (chapter == null) return null;
 
         bool isCreator = currentUserId.HasValue && chapter.Course.CreatorId == currentUserId.Value;
-        
+
         bool isEnrolled = currentUserId.HasValue &&
             await _context.Enrollments.AnyAsync(e => e.UserId == currentUserId.Value && e.CourseId == chapter.CourseId);
 
@@ -108,14 +108,13 @@ public class ChapterService : IChapterService
             throw new UnauthorizedAccessException("Chương này đang ở trạng thái nháp.");
         }
 
+        // PROTECTED: Creator vào thẳng; mọi người khác (kể cả đã enroll khóa học) luôn phải đúng passcode
         if (chapter.AccessType == "PROTECTED" && !isCreator)
         {
-            if (string.IsNullOrEmpty(passcodeHeader) || string.IsNullOrEmpty(chapter.Passcode) || !BCrypt.Net.BCrypt.Verify(passcodeHeader, chapter.Passcode))
-            {
-                throw new UnauthorizedAccessException("PASSCODE_INVALID");
-            }
+            PasscodeGuard.Verify(passcodeHeader, chapter.Passcode);
         }
 
+        // PRIVATE: chỉ Creator hoặc Student đã enroll khóa học chứa chương này
         if (chapter.AccessType == "PRIVATE" && !isCreator && !isEnrolled)
             throw new UnauthorizedAccessException("Chương này ở chế độ riêng tư.");
 

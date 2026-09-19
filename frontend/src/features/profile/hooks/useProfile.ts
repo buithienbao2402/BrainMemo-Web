@@ -1,9 +1,16 @@
+// frontend/src/features/profile/hooks/useProfile.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchMyProfile, updateMyProfile, changePassword } from '../api/profile.api';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
 export function useMyProfile() {
-  return useQuery({ queryKey: ['my-profile'], queryFn: fetchMyProfile });
+  const accessToken = useAuthStore((s) => s.accessToken);
+  return useQuery({
+    queryKey: ['my-profile'],
+    queryFn: fetchMyProfile,
+    // Tránh gọi /users/me khi chưa đăng nhập (trước đây không có điều kiện này -> 401 thừa)
+    enabled: !!accessToken,
+  });
 }
 
 export function useUpdateProfile() {
@@ -13,7 +20,7 @@ export function useUpdateProfile() {
     mutationFn: updateMyProfile,
     onSuccess: (updated) => {
       queryClient.setQueryData(['my-profile'], updated);
-      if (accessToken) setAuth(accessToken, updated as any); 
+      if (accessToken) setAuth(accessToken, updated as any);
     },
   });
 }
@@ -23,7 +30,7 @@ export function useChangePassword() {
   return useMutation({
     mutationFn: changePassword,
     onSuccess: () => {
-      clearAuth(); 
+      clearAuth();
       window.location.href = '/login';
     },
   });

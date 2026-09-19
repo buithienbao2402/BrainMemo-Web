@@ -1,3 +1,4 @@
+// frontend/src/app/providers/AppProviders.tsx
 import type { ReactNode } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
@@ -6,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { theme } from './theme';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AuthProvider } from './AuthProvider';
+import { ThemeSync } from './ThemeSync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +29,8 @@ export function AppProviders({ children }: AppProvidersProps) {
         <MantineProvider theme={theme}>
           <Notifications position="top-right" />
           <AuthProvider>
+            {/* Đặt trong AuthProvider để chỉ chạy sau khi accessToken đã bootstrap xong */}
+            <ThemeSync />
             <BrowserRouter>{children}</BrowserRouter>
           </AuthProvider>
         </MantineProvider>

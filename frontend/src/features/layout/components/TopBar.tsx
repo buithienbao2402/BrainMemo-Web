@@ -1,7 +1,8 @@
+// frontend/src/features/layout/components/TopBar.tsx
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ActionIcon, Group, Menu, TextInput, UnstyledButton, useMantineColorScheme,
+  ActionIcon, Group, Menu, TextInput, UnstyledButton,
 } from '@mantine/core';
 import {
   IconSearch, IconSun, IconMoonStars, IconFlame, IconHome,
@@ -17,6 +18,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { UserAvatar } from '@/shared/components/UserAvatar';
 import classes from './TopBar.module.css';
 import { useLogout } from '@/features/auth/hooks/useAuth';
+import { useThemeToggle } from '@/features/profile/hooks/useThemeToggle';
 
 interface NavPillProps {
   to: string;
@@ -41,10 +43,10 @@ function NavPill({ to, label, icon }: NavPillProps) {
 }
 
 export function TopBar() {
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
   const navigate = useNavigate();
   const { mutate: logout } = useLogout();
+  // Dùng chung logic đổi theme với trang Cài đặt -> đổi ở đâu cũng đồng bộ và được lưu vào tài khoản
+  const { isDark, toggleTheme } = useThemeToggle();
   const { user } = useAuthStore();
 
   const [searchValue, setSearchValue] = useState('');
@@ -131,7 +133,7 @@ export function TopBar() {
               radius="xl"
               size="lg"
               className={classes.themeToggle}
-              onClick={() => setColorScheme(isDark ? 'light' : 'dark')}
+              onClick={toggleTheme}
               aria-label="Toggle color scheme"
             >
               {isDark ? <IconSun size={20} /> : <IconMoonStars size={20} />}

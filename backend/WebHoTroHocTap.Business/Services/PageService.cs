@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebHoTroHocTap.Business.DTOs.Page;
+using WebHoTroHocTap.Business.Security;
 using WebHoTroHocTap.DataAccess;
 using WebHoTroHocTap.DataAccess.Entities;
 
@@ -65,14 +66,13 @@ public class PageService : IPageService
         if (chapter.IsDraft && !isCreator)
             throw new UnauthorizedAccessException("Chương đang ở trạng thái nháp.");
 
+        // Page không có access_type riêng — kế thừa hoàn toàn quyền của Chapter chứa nó.
         if (chapter.AccessType == "PRIVATE" && !isCreator && !isEnrolled)
             throw new UnauthorizedAccessException("Chương này ở chế độ riêng tư.");
 
         if (chapter.AccessType == "PROTECTED" && !isCreator)
         {
-            if (string.IsNullOrEmpty(passcodeHeader) || string.IsNullOrEmpty(chapter.Passcode)
-                || !BCrypt.Net.BCrypt.Verify(passcodeHeader, chapter.Passcode))
-                throw new UnauthorizedAccessException("PASSCODE_INVALID");
+            PasscodeGuard.Verify(passcodeHeader, chapter.Passcode);
         }
 
         // Side effect: nếu là Student đã enroll, cập nhật "đang đọc dở" để phục vụ Tiếp tục học.
