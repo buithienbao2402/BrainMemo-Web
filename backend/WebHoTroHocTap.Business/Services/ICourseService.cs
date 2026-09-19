@@ -9,4 +9,5 @@ public interface ICourseService
     Task<bool> DeleteCourseAsync(int courseId, int creatorId);
     Task<object> GetCoursesAsync(string scope, string? search, List<string>? tags, string? sort, string? status, string? accessType, int page, int pageSize, int? currentUserId);
     Task<object?> GetCourseByIdAsync(int courseId, int? currentUserId, string? passcodeHeader);
+    Task<object> GetCourseDashboardAsync(int courseId, int requestingUserId);   // MỚI
 }

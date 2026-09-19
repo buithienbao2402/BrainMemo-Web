@@ -1,4 +1,5 @@
-import { Badge, Group, Text, UnstyledButton } from '@mantine/core';
+import { Badge, Group, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
+import { IconCheck } from '@tabler/icons-react';
 import privateIcon from '@/assets/course-icon-private-final.png';
 import protectedIcon from '@/assets/course-icon-protected-final.png';
 import type { ChapterSummary } from '../types/course.types';
@@ -10,7 +11,7 @@ interface ChapterListItemProps {
 }
 
 export function ChapterListItem({ chapter, onSelect }: ChapterListItemProps) {
-  const { id, orderIndex, title, accessType, isCurrent } = chapter;
+  const { id, orderIndex, title, accessType, isCurrent, isCompleted } = chapter;
 
   return (
     <UnstyledButton className={classes.item} onClick={() => onSelect?.(id)}>
@@ -23,6 +24,11 @@ export function ChapterListItem({ chapter, onSelect }: ChapterListItemProps) {
         </Group>
 
         <Group gap={6} wrap="nowrap">
+          {isCompleted && (
+            <ThemeIcon color="green" variant="light" size="sm" radius="xl" aria-label="Đã hoàn thành">
+              <IconCheck size={12} />
+            </ThemeIcon>
+          )}
           {isCurrent && (
             <Badge color="orange" variant="filled" size="sm">
               ĐANG HỌC

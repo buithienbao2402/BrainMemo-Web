@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebHoTroHocTap.API.DTOs.Common;
 using WebHoTroHocTap.Business.DTOs.Page;
+using WebHoTroHocTap.Business.DTOs.Progress;
 using WebHoTroHocTap.Business.Services;
 
 namespace WebHoTroHocTap.API.Controllers;
@@ -10,10 +11,12 @@ namespace WebHoTroHocTap.API.Controllers;
 public class PageController : ControllerBase
 {
     private readonly IPageService _pageService;
+    private readonly IProgressService _progressService;
 
-    public PageController(IPageService pageService)
+    public PageController(IPageService pageService, IProgressService progressService)
     {
         _pageService = pageService;
+        _progressService = progressService;
     }
 
     [HttpPost("api/chapters/{chapterId}/pages")]
@@ -114,5 +117,51 @@ public class PageController : ControllerBase
             Message = message,
             Errors = new object[] { new { field = "passcode", code, message } }
         });
+    [HttpPost("api/pages/{id}/complete")]
+    [Authorize]
+    public async Task<IActionResult> CompletePage(int id)
+    {
+        int userId = int.Parse(User.FindFirst("userId")!.Value);
+        try
+        {
+            var result = await _progressService.CompletePageAsync(id, userId);
+            return Ok(new ApiResponse<object> { Success = true, Message = "Đã đánh dấu hoàn thành trang", Data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpPost("api/pages/{id}/quiz/submit")]
+    [Authorize]
+    public async Task<IActionResult> SubmitQuiz(int id, [FromBody] QuizSubmitRequestDto dto)
+    {
+        int userId = int.Parse(User.FindFirst("userId")!.Value);
+        try
+        {
+            var result = await _progressService.SubmitQuizAsync(id, userId, dto);
+            return Ok(new ApiResponse<object> { Success = true, Message = "Đã chấm điểm bài Quiz", Data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
     }
 }

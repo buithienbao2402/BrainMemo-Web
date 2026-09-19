@@ -44,10 +44,10 @@ function NavPill({ to, label, icon }: NavPillProps) {
 
 export function TopBar() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { mutate: logout } = useLogout();
   // Dùng chung logic đổi theme với trang Cài đặt -> đổi ở đâu cũng đồng bộ và được lưu vào tài khoản
   const { isDark, toggleTheme } = useThemeToggle();
+  const { user } = useAuthStore();
 
   const [searchValue, setSearchValue] = useState('');
 

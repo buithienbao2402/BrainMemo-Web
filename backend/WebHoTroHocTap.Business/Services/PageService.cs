@@ -75,6 +75,19 @@ public class PageService : IPageService
             PasscodeGuard.Verify(passcodeHeader, chapter.Passcode);
         }
 
+        // Side effect: nếu là Student đã enroll, cập nhật "đang đọc dở" để phục vụ Tiếp tục học.
+        if (currentUserId.HasValue)
+        {
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.UserId == currentUserId.Value && e.CourseId == chapter.CourseId);
+            if (enrollment != null)
+            {
+                enrollment.LastPageId = page.PageId;
+                enrollment.LastAccessedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return new
         {
             id = page.PageId,

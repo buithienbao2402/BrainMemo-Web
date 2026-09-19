@@ -5,6 +5,7 @@ export interface DashboardCourseCard {
   progressPercent: number;
   currentChapterId: number | null;
   currentChapterOrderIndex: number | null;
+  currentChapterTitle: string | null; // MỚI
   currentPageId: number | null;
 }
 

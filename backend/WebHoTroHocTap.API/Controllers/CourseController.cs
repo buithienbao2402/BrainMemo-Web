@@ -12,10 +12,12 @@ namespace WebHoTroHocTap.API.Controllers;
 public class CourseController : ControllerBase
 {
     private readonly ICourseService _courseService;
+    private readonly IProgressService _progressService;
 
-    public CourseController(ICourseService courseService)
+    public CourseController(ICourseService courseService, IProgressService progressService)
     {
         _courseService = courseService;
+        _progressService = progressService;
     }
 
     [HttpGet]
@@ -185,6 +187,36 @@ public class CourseController : ControllerBase
             Message = message,
             Errors = new object[] { new { field = "passcode", code, message } }
         });
+    [HttpGet("{id}/dashboard")]
+    [Authorize]
+    public async Task<IActionResult> GetCourseDashboard(int id)
+    {
+        int? userId = GetCurrentUserId();
+        if (userId == null)
+            return Unauthorized(new ApiResponse<object> { Success = false, Message = "Phiên đăng nhập không hợp lệ." });
+
+        try
+        {
+            var result = await _courseService.GetCourseDashboardAsync(id, userId.Value);
+            return Ok(new ApiResponse<object> { Success = true, Message = "Lấy thống kê khóa học thành công", Data = result });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id}/progress")]
+    [Authorize]
+    public async Task<IActionResult> GetCourseProgress(int id)
+    {
+        int userId = int.Parse(User.FindFirst("userId")!.Value);
+        var result = await _progressService.GetCourseProgressAsync(id, userId);
+        return Ok(new ApiResponse<object> { Success = true, Message = "OK", Data = result });
     }
 
     private int? GetCurrentUserId()

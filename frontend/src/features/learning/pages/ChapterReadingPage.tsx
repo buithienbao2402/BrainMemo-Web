@@ -5,6 +5,7 @@ import { Center, Loader, Alert } from '@mantine/core';
 import { ReadingLayout } from '@/app/layouts/ReadingLayout';
 import { useChapterDetail } from '../hooks/useChapterDetail';
 import { usePageDetail } from '../hooks/usePageDetail';
+import { useChapterProgress } from '../hooks/useProgress';
 import { useCourseDetail } from '@/features/courses/hooks/useCourseDetail';
 import { ContentRenderer } from '../components/ContentRenderer';
 import { usePasscodeAccess, extractApiErrorMessage } from '@/shared/hooks/usePasscodeAccess';
@@ -27,6 +28,7 @@ export function ChapterReadingPage() {
   const { data: chapter, isLoading: loadingChapter, isError: chapterHasError, error: chapterErrObj } =
     useChapterDetail(Number(chapterId), passcode);
   const { data: course } = useCourseDetail(Number(courseId));
+  const { data: chapterProgress } = useChapterProgress(Number(chapterId));
 
   const sortedPages = chapter ? [...chapter.pages].sort((a, b) => a.orderIndex - b.orderIndex) : [];
   const activePageId = pageId ? Number(pageId) : sortedPages[0]?.id;
@@ -129,5 +131,30 @@ export function ChapterReadingPage() {
         title="Chương học được bảo vệ"
       />
     </>
+    <ReadingLayout
+      courseTitle={course?.title ?? ''}
+      chapterTitle={chapter.title}
+      progressPercent={chapterProgress?.progressPercent ?? 0}
+      currentPageIndex={currentIndex + 1}
+      totalPages={totalPages}
+      isPrevDisabled={currentIndex <= 0}
+      isNextDisabled={currentIndex >= totalPages - 1}
+      onBack={() => navigate(`/courses/${courseId}`)}
+      onPrev={() => sortedPages[currentIndex - 1] && goToPage(sortedPages[currentIndex - 1].id)}
+      onNext={() => sortedPages[currentIndex + 1] && goToPage(sortedPages[currentIndex + 1].id)}
+      onPrevChapter={prevChapter ? () => goToChapter(prevChapter.id) : undefined}
+      onNextChapter={nextChapter ? () => goToChapter(nextChapter.id) : undefined}
+      isPrevChapterDisabled={!prevChapter}
+      isNextChapterDisabled={!nextChapter}
+      tocPages={tocPages}
+      currentPageId={activePageId}
+      onNavigateToPage={goToPage}
+    >
+      {loadingPage || !page ? (
+        <Center h={200}><Loader color="orange" /></Center>
+      ) : (
+        <ContentRenderer blocks={page.blocks} pageId={page.id} chapterId={Number(chapterId)} />
+      )}
+    </ReadingLayout>
   );
 }
