@@ -17,6 +17,7 @@ interface CourseOverviewCardProps {
   currentChapterOrderIndex: number | null;
   onStartLearning?: () => void;
   onContinueLearning?: () => void;
+  isStartingLearning?: boolean; // MỚI
 }
 
 export function CourseOverviewCard({
@@ -31,6 +32,7 @@ export function CourseOverviewCard({
   currentChapterOrderIndex,
   onStartLearning,
   onContinueLearning,
+  isStartingLearning,
 }: CourseOverviewCardProps) {
   return (
     <Paper shadow="sm" radius="md" className={classes.card}>
@@ -43,11 +45,13 @@ export function CourseOverviewCard({
             color="orange"
             leftSection={<IconBook2 size={16} />}
             onClick={onStartLearning}
+            loading={isStartingLearning}
           >
             Bắt đầu học
           </Button>
 
-          {currentChapterOrderIndex && (
+          {/* FIX: orderIndex bắt đầu từ 0 trong DB -> phải check != null, không được dùng truthy check */}
+          {currentChapterOrderIndex != null && (
             <Button
               color="dark"
               leftSection={<IconPlayerPlayFilled size={14} />}

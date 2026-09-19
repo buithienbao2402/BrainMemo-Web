@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-// Import mock api (GỐC)
+// Import mock api — CHỈ còn dùng cho invitations (module Invitation backend chưa được xây, ngoài phạm vi đợt này)
 import {
   getCourseDashboardStats,
   getCourseInvitations,
 } from '../api/course-detail.mock.api';
-// Import api thật (MỚI THÊM)
+// Import api thật
 import {
   getCourseDashboardStatsReal,
   getCourseInvitationsReal,
@@ -12,8 +12,10 @@ import {
 } from '../api/course-detail.api';
 
 // ==========================================
-// CÔNG TẮC API: True = Chạy code gốc của ông, False = Gọi Backend
-const USE_MOCK = true;
+// CÔNG TẮC API: tách riêng 2 cờ vì Dashboard (participants/completed/comments) đã có
+// backend thật (Phase 2), còn Invitation module thì chưa -> giữ mock để UI không vỡ.
+const USE_MOCK_STATS = false;       // ĐỔI: false — dashboard đã có API thật
+const USE_MOCK_INVITATIONS = true;  // Giữ nguyên cho tới khi có Invitation backend
 // ==========================================
 
 export const courseDetailKeys = {
@@ -27,24 +29,24 @@ export const courseDetailKeys = {
 /** GET /api/courses/{id}/dashboard — thống kê + danh sách học viên */
 export function useCourseDashboardStats(courseId: string) {
   return useQuery({
-    queryKey: courseDetailKeys.stats(courseId), // Giữ nguyên gốc
-    queryFn: () => 
-      USE_MOCK 
-        ? getCourseDashboardStats(courseId) // Đúng y như gốc
-        : getCourseDashboardStatsReal(courseId), // Đường phụ cho BE
-    enabled: Boolean(courseId), // Giữ nguyên gốc
+    queryKey: courseDetailKeys.stats(courseId),
+    queryFn: () =>
+      USE_MOCK_STATS
+        ? getCourseDashboardStats(courseId)
+        : getCourseDashboardStatsReal(courseId),
+    enabled: Boolean(courseId),
   });
 }
 
 /** GET /api/courses/{id}/invitations — danh sách lời mời đã gửi */
 export function useCourseInvitations(courseId: string) {
   return useQuery({
-    queryKey: courseDetailKeys.invitations(courseId), // Giữ nguyên gốc
-    queryFn: () => 
-      USE_MOCK 
-        ? getCourseInvitations(courseId) // Đúng y như gốc
-        : getCourseInvitationsReal(courseId), // Đường phụ cho BE
-    enabled: Boolean(courseId), // Giữ nguyên gốc
+    queryKey: courseDetailKeys.invitations(courseId),
+    queryFn: () =>
+      USE_MOCK_INVITATIONS
+        ? getCourseInvitations(courseId)
+        : getCourseInvitationsReal(courseId),
+    enabled: Boolean(courseId),
   });
 }
 

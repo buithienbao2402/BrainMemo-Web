@@ -24,6 +24,11 @@ builder.Services.AddScoped<IBlockService, BlockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ILearningService, LearningService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IProgressService, ProgressService>();
+
 
 // 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -112,11 +117,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<ILearningService, LearningService>();
 
 var app = builder.Build();
 

@@ -7,12 +7,16 @@ import { CourseHeader } from '../components/CourseHeader';
 import { CourseInfoBox } from '../components/CourseInfoBox';
 import { CourseOverviewCard } from '../components/CourseOverviewCard';
 import { useCourseDetail } from '../hooks/useCourseDetail';
+import { useCourseProgress } from '../hooks/useCourseProgress';
+import { useEnrollCourse } from '../hooks/useEnrollment';
 
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const courseId = Number(id);
   const { data: course, isLoading, isError, error } = useCourseDetail(courseId);
+  const { data: progress } = useCourseProgress(courseId);
+  const { mutateAsync: enroll, isPending: isEnrolling } = useEnrollCourse(courseId);
 
   if (isLoading) return <Center h={300}><Loader color="orange" /></Center>;
 
@@ -21,15 +25,38 @@ export function CourseDetailPage() {
   }
   if (!course) return null;
 
-  // Bug fix: nút "Bắt đầu học" trước đây không có handler (onStartLearning không được truyền)
-  // -> click không làm gì. Nay lấy chương có orderIndex nhỏ nhất, điều hướng thẳng vào đó.
-  // Không cần truyền pageId trên URL vì ChapterReadingPage tự lấy trang đầu tiên của chương
-  // khi thiếu pageId (xem sortedPages[0]?.id trong ChapterReadingPage.tsx).
-  const handleStartLearning = () => {
-    const firstChapter = [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex)[0];
+  const sortedChapters = [...course.chapters].sort((a, b) => a.orderIndex - b.orderIndex);
+
+  // "Bắt đầu học": ghi danh (nếu chưa) rồi vào chương đầu tiên.
+  const handleStartLearning = async () => {
+    const firstChapter = sortedChapters[0];
     if (!firstChapter) return; // khóa học chưa có chương nào
-    navigate(`/courses/${course.id}/learn/${firstChapter.id}`);
+    try {
+      if (!progress?.isEnrolled) {
+        await enroll(undefined);
+      }
+      navigate(`/courses/${course.id}/learn/${firstChapter.id}`);
+    } catch {
+      // Khóa học PROTECTED thiếu/sai passcode -> giữ nguyên trang, không điều hướng.
+      // (Trang này chỉ xem được nếu đã qua bước nhập passcode ở tầng CourseDetail, nên case này hiếm gặp.)
+    }
   };
+
+  // "Học tiếp": vào đúng trang đang dở dang.
+  const handleContinueLearning = () => {
+    if (!progress?.currentChapterId) return;
+    const path = progress.currentPageId
+      ? `/courses/${course.id}/learn/${progress.currentChapterId}/${progress.currentPageId}`
+      : `/courses/${course.id}/learn/${progress.currentChapterId}`;
+    navigate(path);
+  };
+
+  // Gắn cờ isCompleted/isCurrent vào từng chương để ChapterList hiện tick xanh + badge "ĐANG HỌC".
+  const chaptersWithProgress = sortedChapters.map((ch) => ({
+    ...ch,
+    isCompleted: progress?.chapters.find((p) => p.chapterId === ch.id)?.isCompleted ?? false,
+    isCurrent: ch.id === progress?.currentChapterId,
+  }));
 
   return (
     <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
@@ -43,9 +70,11 @@ export function CourseDetailPage() {
             flashcardsCount={course.flashcardsCount}
             quizzesCount={course.quizzesCount}
             tags={course.tags}
-            progressPercent={0} // chưa có API tiến độ
-            currentChapterOrderIndex={null} // chưa có API "tiếp tục học"
+            progressPercent={progress?.progressPercent ?? 0}
+            currentChapterOrderIndex={progress?.currentChapterOrderIndex ?? null}
             onStartLearning={handleStartLearning}
+            onContinueLearning={handleContinueLearning}
+            isStartingLearning={isEnrolling}
           />
           <CourseInfoBox status={course.status} accessType={course.accessType} createdAt={course.createdAt} />
         </Stack>
@@ -60,7 +89,7 @@ export function CourseDetailPage() {
             participantsCount={course.participantsCount}
           />
           <AboutSection description={course.description} />
-          <ChapterList chapters={course.chapters} />
+          <ChapterList chapters={chaptersWithProgress} />
           <CommentSection courseId={course.id} />
         </Stack>
       </Grid.Col>

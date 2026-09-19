@@ -62,6 +62,7 @@ public class LearningService : ILearningService
             progressPercent = e.ProgressPercent,
             currentChapterId = e.LastPage?.ChapterId,
             currentChapterOrderIndex = e.LastPage?.Chapter?.OrderIndex,
+            currentChapterTitle = e.LastPage?.Chapter?.Title,
             currentPageId = e.LastPageId,
         };
     }
