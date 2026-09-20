@@ -37,6 +37,8 @@ export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
  * Field theo schema bảng course_invitation (mục 1, #2), viết dạng camelCase.
  */
 export interface CourseInvitation {
+  inviteeFullName?: string | null;
+  inviteeAvatarUrl?: string | null;
   invitationId: number;
   courseId: number;
   inviterId: number;

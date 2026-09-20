@@ -168,7 +168,6 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("fk_course_creator");
         });
 
-        // Bảng trung gian CourseTag đã tách thành Entity độc lập
         modelBuilder.Entity<CourseTag>(entity =>
         {
             entity.ToTable("course_tag");
@@ -306,20 +305,35 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.NotificationId).HasName("PRIMARY");
             entity.ToTable("notification");
+
             entity.HasIndex(e => e.IsRead, "idx_notification_isread");
             entity.HasIndex(e => e.UserId, "idx_notification_user");
+
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
+
+            // Hoàn thiện và ánh xạ 2 thuộc tính liên kết sang snake_case của MySQL
+            entity.Property(e => e.RelatedEntityId)
+                .HasColumnName("related_entity_id");
+
+            entity.Property(e => e.RelatedEntityType)
+                .HasMaxLength(50)
+                .HasColumnName("related_entity_type");
+
             entity.Property(e => e.Content)
                 .HasMaxLength(500)
                 .HasColumnName("content");
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+
             entity.Property(e => e.IsRead).HasColumnName("is_read");
+
             entity.Property(e => e.Type)
                 .HasColumnType("enum('NEW_CHAPTER','NEW_COMMENT','NEW_ENROLLMENT','COURSE_INVITATION','INVITATION_ACCEPTED')")
                 .HasColumnName("type");
+
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
