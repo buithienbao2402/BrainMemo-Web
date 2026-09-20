@@ -48,84 +48,84 @@ export function ContentRenderer({ blocks, pageId, chapterId }: ContentRendererPr
     };
 
     return (
-        <Stack gap= "lg" maw = { 760} mx = "auto" >
-        {
-            blocks.map((block) => {
-                switch (block.blockType) {
-                    case 'TEXT':
-                        return <TextBlockView key={ block.id } contentText = { block.contentText ?? '' } />;
-                    case 'IMAGE':
-                        return (
-                            <ImageBlockView
-                key= { block.id }
-                        mediaUrl = { block.mediaUrl ?? '' }
-                        caption = { block.contentText }
-                            />
-            );
-            case 'AUDIO':
-            case 'VIDEO':
-            return(
-              <MediaPlayerBlockView
-                key = { block.id }
-                kind = { block.blockType }
-                mediaUrl = { block.mediaUrl ?? '' }
-                caption = { block.contentText }
-                    />
-            );
-          case 'QUIZ':
-            return(
-              <QuizBlockView key = { block.id } questions = { block.quiz?.questions ?? [] } onAnswerChange = { handleAnswerChange } />
-            );
-          case 'FLASHCARD':
-            return(
-              <Stack key = { block.id } gap = "sm" >
-                    {(block.flashcards ?? []).map((card) => (
-                        <FlashcardBlockView key= { card.flashcardId } frontText = { card.frontText } backText = { card.backText } />
-                ))
-        }
-            </Stack>
-            );
-          default:
-    return null;
-}
-      })}
+        <Stack gap="lg" maw={760} mx="auto" >
+            {
+                blocks.map((block) => {
+                    switch (block.blockType) {
+                        case 'TEXT':
+                            return <TextBlockView key={block.id} contentText={block.contentText ?? ''} />;
+                        case 'IMAGE':
+                            return (
+                                <ImageBlockView
+                                    key={block.id}
+                                    mediaUrl={block.mediaUrl ?? ''}
+                                    caption={block.contentText}
+                                />
+                            );
+                        case 'AUDIO':
+                        case 'VIDEO':
+                            return (
+                                <MediaPlayerBlockView
+                                    key={block.id}
+                                    kind={block.blockType}
+                                    mediaUrl={block.mediaUrl ?? ''}
+                                    caption={block.contentText}
+                                />
+                            );
+                        case 'QUIZ':
+                            return (
+                                <QuizBlockView key={block.id} questions={block.quiz?.questions ?? []} onAnswerChange={handleAnswerChange} />
+                            );
+                        case 'FLASHCARD':
+                            return (
+                                <Stack key={block.id} gap="sm" >
+                                    {(block.flashcards ?? []).map((card) => (
+                                        <FlashcardBlockView key={card.flashcardId} frontText={card.frontText} backText={card.backText} />
+                                    ))
+                                    }
+                                </Stack>
+                            );
+                        default:
+                            return null;
+                    }
+                })}
 
-{
-    !hasQuizBlock && (
-        <Group justify="flex-end" >
-            <Button
-            color="green"
-    variant = { isPageMarkedComplete? 'light': 'filled' }
-    leftSection = {< IconCheck size = { 16} />}
-loading = { completePage.isPending }
-disabled = { isPageMarkedComplete }
-onClick = { handleCompletePage }
-    >
-{ isPageMarkedComplete? 'Đã hoàn thành trang này': 'Đánh dấu hoàn thành' }
-    </Button>
-    </Group>
-      )}
-
-{
-    hasQuizBlock && (
-        <Stack gap="xs" >
-            <Group justify="flex-end" >
-                <Button color="orange" loading = { submitQuiz.isPending } onClick = { handleSubmitQuizProgress } >
-                    Nộp bài & lưu tiến độ
+            {
+                !hasQuizBlock && (
+                    <Group justify="flex-end" >
+                        <Button
+                            color="green"
+                            variant={isPageMarkedComplete ? 'light' : 'filled'}
+                            leftSection={< IconCheck size={16} />}
+                            loading={completePage.isPending}
+                            disabled={isPageMarkedComplete}
+                            onClick={handleCompletePage}
+                        >
+                            {isPageMarkedComplete ? 'Đã hoàn thành trang này' : 'Đánh dấu hoàn thành'}
                         </Button>
+                    </Group>
+                )}
+
+            {
+                hasQuizBlock && (
+                    <Stack gap="xs" >
+                        <Group justify="flex-end" >
+                            <Button color="orange" loading={submitQuiz.isPending} onClick={handleSubmitQuizProgress} >
+                                Nộp bài & lưu tiến độ
+                            </Button>
                         </Group>
-    {
-        submitQuiz.data && (
-            <Alert color={ submitQuiz.data.passed ? 'green' : 'red' } icon = {< IconBulb size = { 16} />} variant = "light" >
-                <Text size="sm" >
-                    Điểm: { submitQuiz.data.scorePercent }% (cần đạt { submitQuiz.data.requiredPercent }%) —{ ' ' }
-    { submitQuiz.data.passed ? 'Đạt, trang đã được đánh dấu hoàn thành.' : 'Chưa đạt, có thể làm lại.' }
-    </Text>
-        </Alert>
-          )
-}
-</Stack>
-      )}
-</Stack>
-  );
+                        {
+                            submitQuiz.data && (
+                                <Alert color={submitQuiz.data.passed ? 'green' : 'red'} icon={< IconBulb size={16} />} variant="light" >
+                                    <Text size="sm" >
+                                        Điểm: {submitQuiz.data.scorePercent}% (cần đạt {submitQuiz.data.requiredPercent}%) —{' '}
+                                        {submitQuiz.data.passed ? 'Đạt, trang đã được đánh dấu hoàn thành.' : 'Chưa đạt, có thể làm lại.'}
+                                    </Text>
+                                </Alert>
+                            )
+                        }
+                    </Stack>
+                )}
+        </Stack>
+    );
 }
