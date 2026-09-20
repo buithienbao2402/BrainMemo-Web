@@ -6,8 +6,26 @@ import type { ApiResponse } from '@/shared/types/api.types';
 export type PasscodeErrorCode = 'PASSCODE_REQUIRED' | 'PASSCODE_INVALID';
 
 function extractPasscodeErrorCode(error: unknown): PasscodeErrorCode | null {
-  const axiosErr = error as AxiosError<ApiResponse<null>>;
-  const code = axiosErr?.response?.data?.errors?.[0]?.code;
+  const axiosErr = error as AxiosError<ApiResponse<any>>;
+  const responseData = axiosErr?.response?.data;
+
+  // 1. Quét kiểm tra linh hoạt trong mảng hoặc object errors từ BE (hỗ trợ cả code lẫn Code)
+  const errContainer = responseData?.errors;
+  const errItem = Array.isArray(errContainer) ? errContainer[0] : errContainer;
+  const rawCode = errItem?.code || (errItem as any)?.Code;
+
+  if (rawCode === 'PASSCODE_REQUIRED' || rawCode === 'PASSCODE_INVALID') {
+    return rawCode;
+  }
+
+  // 2. Dự phòng kiểm tra trực tiếp trong message nếu Backend trả thẳng mã lỗi qua message
+  const message = responseData?.message;
+  if (message === 'PASSCODE_REQUIRED' || message === 'PASSCODE_INVALID') {
+    return message as PasscodeErrorCode;
+  }
+
+  // 3. Fallback về logic gốc của Bố Thuận để đảm bảo không lệch pha bất kỳ trường hợp nào khác
+  const code = responseData?.errors?.[0]?.code;
   return code === 'PASSCODE_REQUIRED' || code === 'PASSCODE_INVALID' ? code : null;
 }
 
@@ -50,8 +68,11 @@ export function usePasscodeAccess(resetKey?: unknown) {
 
   const isPasscodeError = useCallback((error: unknown) => extractPasscodeErrorCode(error) !== null, []);
 
+  // GIỮ NGUYÊN KHUNG CŨ, THÊM LỆNH TỰ ĐỘNG ĐÓNG MODAL KHI SUBMIT PASSCODE MỚI
   const submitPasscode = useCallback((value: string) => {
     setPasscode(value);
+    setModalOpened(false);   // <--- Tự động sập modal xuống
+    setInvalidAttempt(false); // <--- Xóa trạng thái báo lỗi đỏ
   }, []);
 
   const closeModal = useCallback(() => setModalOpened(false), []);

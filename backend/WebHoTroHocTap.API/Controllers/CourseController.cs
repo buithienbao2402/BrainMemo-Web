@@ -172,6 +172,21 @@ public class CourseController : ControllerBase
         }
     }
 
+    // Trả cùng định dạng errors[] mà CreateCourse/UpdateCourse đã dùng cho PasscodeRequiredException,
+    // để FE xử lý thống nhất 1 chỗ (usePasscodeAccess) cho mọi API có PROTECTED.
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
+    }
     [HttpGet("{id}/dashboard")]
     [Authorize]
     public async Task<IActionResult> GetCourseDashboard(int id)

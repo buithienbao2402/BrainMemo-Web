@@ -1,7 +1,8 @@
 // frontend/src/features/learning/pages/ChapterReadingPage.tsx
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Center, Loader, Alert } from '@mantine/core';
+import { Center, Loader, Alert, Stack, Title, Text, Button } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
 import { ReadingLayout } from '@/app/layouts/ReadingLayout';
 import { useChapterDetail } from '../hooks/useChapterDetail';
 import { usePageDetail } from '../hooks/usePageDetail';
@@ -19,9 +20,6 @@ export function ChapterReadingPage() {
   }>();
   const navigate = useNavigate();
 
-  // resetKey = chapterId -> chuyển sang chương khác (kể cả PROTECTED khác mật khẩu) thì tự reset,
-  // nhưng chuyển trang (pageId) trong CÙNG chương vẫn giữ nguyên passcode đã nhập — đúng tinh thần
-  // "Page kế thừa passcode của Chapter chứa nó".
   const { passcode, modalOpened, invalidAttempt, handleError, isPasscodeError, submitPasscode, closeModal } =
     usePasscodeAccess(chapterId);
 
@@ -33,8 +31,6 @@ export function ChapterReadingPage() {
   const sortedPages = chapter ? [...chapter.pages].sort((a, b) => a.orderIndex - b.orderIndex) : [];
   const activePageId = pageId ? Number(pageId) : sortedPages[0]?.id;
 
-  // Gửi CÙNG passcode đã mở khóa chương cho request lấy trang, vì hệ thống không lưu trạng thái
-  // đã mở khóa -> mọi request nội dung PROTECTED đều phải kèm header ở mọi lần gọi (API_Contract.md mục 0).
   const { data: page, isLoading: loadingPage, isError: pageHasError, error: pageErrObj } =
     usePageDetail(activePageId, passcode);
 
@@ -58,16 +54,22 @@ export function ChapterReadingPage() {
 
   if (loadingChapter) return <Center h={300}><Loader color="orange" /></Center>;
 
-  // 403 nhưng KHÔNG phải do passcode (vd chương PRIVATE) -> hiển thị lỗi thật, không mở modal
   if (chapterHasError && !isPasscodeError(chapterErrObj)) {
     return <Alert color="red">{extractApiErrorMessage(chapterErrObj, 'Không thể tải chương.')}</Alert>;
   }
 
-  if (!chapter) {
-    // Đang chờ nhập passcode cho chương PROTECTED
+  // CHẶN BẢO MẬT TUYỆT ĐỐI: Nếu Chương hoặc Trang yêu cầu passcode mà chưa cung cấp đúng
+  const isBlocked = isPasscodeError(chapterErrObj) || isPasscodeError(pageErrObj);
+
+  if (isBlocked) {
     return (
-      <>
-        <Center h={300}><Loader color="orange" /></Center>
+      <Stack align="center" mt={100} gap="md">
+        <IconLock size={48} color="var(--mantine-color-orange-5)" />
+        <Title order={3}>Nội dung được bảo vệ</Title>
+        <Text c="dimmed">Chương học này yêu cầu mật khẩu để tiếp tục xem nội dung.</Text>
+        <Button color="orange" onClick={() => handleError(chapterHasError ? chapterErrObj : pageErrObj)}>
+          Nhập mật khẩu
+        </Button>
         <PasscodeModal
           opened={modalOpened}
           onClose={closeModal}
@@ -75,9 +77,11 @@ export function ChapterReadingPage() {
           isInvalid={invalidAttempt}
           title="Chương học được bảo vệ"
         />
-      </>
+      </Stack>
     );
   }
+
+  if (!chapter) return <Center h={300}><Loader color="orange" /></Center>;
 
   const currentIndex = sortedPages.findIndex((p) => p.id === activePageId);
   const totalPages = sortedPages.length;
