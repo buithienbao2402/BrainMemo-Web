@@ -2,9 +2,10 @@
 
 public class UserDto
 {
-    public int UserId { get; set; } // Nếu trong DB là kiểu string/Guid thì đổi kiểu tương ứng
+    public int UserId { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? FullName { get; set; }
+    public string? AvatarUrl { get; set; }
 }
 
 public class LoginResponseDto

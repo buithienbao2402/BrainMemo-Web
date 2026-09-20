@@ -28,7 +28,7 @@ public class CourseService : ICourseService
             CreatorId = creatorId,
             Title = title,
             Description = description,
-            CoverImage = coverImageKey,
+            CoverImage = NormalizeKey(coverImageKey),
             AccessType = accessType,
             Passcode = hashedPasscode,
             Status = CourseStatus.UPDATING
@@ -61,7 +61,7 @@ public class CourseService : ICourseService
 
         course.Title = title;
         course.Description = description;
-        course.CoverImage = coverImageKey;
+        course.CoverImage = NormalizeKey(coverImageKey);
         course.AccessType = accessType;
         course.Passcode = hashedPasscode;
 
@@ -171,8 +171,7 @@ public class CourseService : ICourseService
                 // MỚI — phục vụ hiển thị "chương mới đăng + thời gian đăng" ở Home "MỚI CẬP NHẬT".
                 // Chỉ tính chương ĐÃ ĐĂNG (IsDraft = false), lấy chương có CreatedAt mới nhất.
                 // Cast sang (DateTime?) trước FirstOrDefault() để trả về null đúng nghĩa khi khóa học
-                // chưa có chương nào đã đăng, thay vì rơi về DateTime.MinValue (cùng lớp vấn đề với
-                // pattern MaxAsync trên sequence có thể rỗng đã ghi chú trước đây).
+                // chưa có chương nào đã đăng, thay vì rơi về DateTime.MinValue.
                 latestChapterTitle = c.Chapters
                     .Where(ch => !ch.IsDraft)
                     .OrderByDescending(ch => ch.CreatedAt)
@@ -254,6 +253,38 @@ public class CourseService : ICourseService
         };
     }
 
+    public async Task<object> GetCourseDashboardAsync(int courseId, int requestingUserId)
+    {
+        var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
+        if (course == null) throw new KeyNotFoundException("Khóa học không tồn tại.");
+        if (course.CreatorId != requestingUserId)
+            throw new UnauthorizedAccessException("Chỉ người tạo khóa học mới có quyền xem dashboard.");
+
+        var enrollments = await _context.Enrollments
+            .Include(e => e.User)
+            .Where(e => e.CourseId == courseId)
+            .OrderByDescending(e => e.ProgressPercent)
+            .ToListAsync();
+
+        int participantsCount = enrollments.Count;
+        int completedCount = enrollments.Count(e => e.Status == "COMPLETED");
+        int commentsCount = await _context.Comments.CountAsync(c => c.CourseId == courseId);
+
+        var students = enrollments.Select(e => new
+        {
+            userId = e.UserId,
+            fullName = e.User.FullName,
+            avatarUrl = e.User.AvatarUrl,
+            progressPercent = e.ProgressPercent,
+            enrolledAt = e.EnrolledAt
+        }).ToList();
+
+        return new { participantsCount, completedCount, commentsCount, students };
+    }
+
+    private static string? NormalizeKey(string? key) =>
+        string.IsNullOrWhiteSpace(key) ? null : key.Trim();
+
     private static string? ResolvePasscodeHash(AccessType accessType, string? newPasscode, string? existingPasscodeHash)
     {
         if (accessType != AccessType.PROTECTED)
@@ -321,34 +352,5 @@ public class CourseService : ICourseService
         }
 
         return existingTags.Concat(newTags).ToList();
-    }
-
-    public async Task<object> GetCourseDashboardAsync(int courseId, int requestingUserId)
-    {
-        var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
-        if (course == null) throw new KeyNotFoundException("Khóa học không tồn tại.");
-        if (course.CreatorId != requestingUserId)
-            throw new UnauthorizedAccessException("Chỉ người tạo khóa học mới có quyền xem dashboard.");
-
-        var enrollments = await _context.Enrollments
-            .Include(e => e.User)
-            .Where(e => e.CourseId == courseId)
-            .OrderByDescending(e => e.ProgressPercent)
-            .ToListAsync();
-
-        int participantsCount = enrollments.Count;
-        int completedCount = enrollments.Count(e => e.Status == "COMPLETED");
-        int commentsCount = await _context.Comments.CountAsync(c => c.CourseId == courseId);
-
-        var students = enrollments.Select(e => new
-        {
-            userId = e.UserId,
-            fullName = e.User.FullName,
-            avatarUrl = e.User.AvatarUrl,
-            progressPercent = e.ProgressPercent,
-            enrolledAt = e.EnrolledAt
-        }).ToList();
-
-        return new { participantsCount, completedCount, commentsCount, students };
     }
 }

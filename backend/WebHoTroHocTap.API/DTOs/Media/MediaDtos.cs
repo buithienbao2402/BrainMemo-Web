@@ -11,6 +11,7 @@ public class MediaUploadRequestDto
 public class MediaUploadResponseDto
 {
     public string Url { get; set; } = string.Empty;
+    public string ObjectKey { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public string MediaType { get; set; } = string.Empty;
     public long FileSize { get; set; }
