@@ -22,3 +22,7 @@ sketch
 # Build outputs (.NET)
 [Bb]in/
 [Oo]bj/
+
+# Bỏ qua toàn bộ nội dung trong thư mục uploads (bao gồm audios, images, videos)
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep
