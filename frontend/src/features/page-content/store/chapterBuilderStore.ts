@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AccessType } from '@/features/course-management/types/course-management.types';
+import type { AiFlashcardItem, AiQuizQuestion } from '../api/ai.api';
 
 export type BlockType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FLASHCARD' | 'QUIZ';
 
@@ -151,6 +152,9 @@ interface ChapterBuilderState extends ChapterDraftSnapshot {
         optionTempId: string
     ) => void;
 
+    appendAiFlashcards: (pageTempId: string, blockTempId: string, items: AiFlashcardItem[]) => void;
+    appendAiQuizQuestions: (pageTempId: string, blockTempId: string, questions: AiQuizQuestion[]) => void;
+
     resetStore: () => void;
 }
 
@@ -221,6 +225,13 @@ function updateBlockInPages(
             : p
     );
 }
+
+// Thẻ/câu hỏi trống mặc định (do createEmptyBlock tạo) sẽ bị thay thế khi AI sinh nội dung,
+// tránh việc nằm chình ình phía trên kết quả AI.
+const isBlankFlashcard = (it: FlashcardItemInput) => !it.frontText.trim() && !it.backText.trim();
+
+const isBlankQuestion = (q: QuizQuestionInput) =>
+    !q.questionText.trim() && !q.explanation.trim() && q.options.every((o) => !o.optionText.trim());
 
 export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
     ...buildInitialState(),
@@ -465,6 +476,55 @@ export const useChapterBuilderStore = create<ChapterBuilderState>((set) => ({
                         return { ...q, options };
                     }),
                 };
+            }),
+        })),
+
+    // ---------------- AI ----------------
+
+    appendAiFlashcards: (pageTempId, blockTempId, items) =>
+        set((state) => ({
+            pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+                if (b.blockType !== 'FLASHCARD') return b;
+                const kept = b.items.filter((it) => !isBlankFlashcard(it));
+                const added: FlashcardItemInput[] = items.map((it) => ({
+                    itemTempId: crypto.randomUUID(),
+                    frontText: it.frontText,
+                    backText: it.backText,
+                }));
+                const merged = [...kept, ...added];
+                // Đảm bảo luôn còn ít nhất 1 thẻ (phòng trường hợp AI trả mảng rỗng)
+                return {
+                    ...b,
+                    items: merged.length > 0
+                        ? merged
+                        : [{ itemTempId: crypto.randomUUID(), frontText: '', backText: '' }],
+                };
+            }),
+        })),
+
+    appendAiQuizQuestions: (pageTempId, blockTempId, questions) =>
+        set((state) => ({
+            pages: updateBlockInPages(state.pages, pageTempId, blockTempId, (b) => {
+                if (b.blockType !== 'QUIZ') return b;
+                const kept = b.questions.filter((q) => !isBlankQuestion(q));
+                const added: QuizQuestionInput[] = questions.map((q) => {
+                    // Phòng thủ: đảm bảo đúng 1 đáp án đúng (ràng buộc BE)
+                    const correctIdx = Math.max(0, q.options.findIndex((o) => o.isCorrect));
+                    return {
+                        questionTempId: crypto.randomUUID(),
+                        questionText: q.questionText,
+                        explanation: q.explanation ?? '',
+                        options: q.options.map((o, i) => ({
+                            optionTempId: crypto.randomUUID(),
+                            optionText: o.optionText,
+                            isCorrect: i === correctIdx,
+                        })),
+                    };
+                });
+                const merged = [...kept, ...added];
+                if (merged.length > 0) return { ...b, questions: merged };
+                // AI trả rỗng: giữ lại câu hỏi hiện có để block không bị 0 câu
+                return b;
             }),
         })),
 

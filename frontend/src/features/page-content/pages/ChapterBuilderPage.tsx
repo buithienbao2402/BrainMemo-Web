@@ -38,6 +38,7 @@ import {
     IconPhotoPlus,
     IconCards,
     IconChecklist,
+    IconSparkles,
 } from '@tabler/icons-react';
 import type { AccessType } from '@/features/course-management/types/course-management.types';
 import { uploadMedia, getMediaErrorMessage } from '@/shared/api/mediaApi';
@@ -53,6 +54,8 @@ import {
 } from '../store/chapterBuilderStore';
 import { useSubmitChapterBuilder } from '../hooks/useSubmitChapterBuilder';
 import { useFetchChapterDetail } from '../hooks/useFetchChapterDetail';
+import { AiGenerateModal } from '../components/AiGenerateModal';
+import { generateFlashcards, generateQuiz, type AiGeneratePayload } from '../api/ai.api';
 import classes from './ChapterBuilderPage.module.css';
 
 const ACCESS_OPTIONS: Array<{
@@ -137,7 +140,6 @@ function MediaBlockCard({ pageTempId, block }: { pageTempId: string; block: Medi
 
         try {
             setIsUploading(true);
-            // Kiểm tra dung lượng đã nằm trong uploadMedia (ảnh 5MB, audio 20MB, video 100MB)
             const res = await uploadMedia(file, block.blockType);
 
             updateBlock(pageTempId, block.blockTempId, {
@@ -189,7 +191,6 @@ function MediaBlockCard({ pageTempId, block }: { pageTempId: string; block: Medi
             key= { sub.value }
             size = "xs"
             variant = "default"
-            // Block đã tồn tại trên server thì BE không cho đổi loại (blockType) khi cập nhật
             disabled = { isUploading || (block.blockId != null && block.blockType !== sub.value)}
 leftSection = {< sub.icon size = { 14} />}
 classNames = {{
@@ -279,6 +280,19 @@ function FlashcardBlockCard({ pageTempId, block }: { pageTempId: string; block: 
     const addFlashcardItem = useChapterBuilderStore((s) => s.addFlashcardItem);
     const removeFlashcardItem = useChapterBuilderStore((s) => s.removeFlashcardItem);
     const removeBlock = useChapterBuilderStore((s) => s.removeBlock);
+    const appendAiFlashcards = useChapterBuilderStore((s) => s.appendAiFlashcards);
+    const [aiOpened, setAiOpened] = useState(false);
+
+    const handleAiGenerate = async (payload: AiGeneratePayload) => {
+        const items = await generateFlashcards(payload);
+        appendAiFlashcards(pageTempId, block.blockTempId, items);
+        setAiOpened(false);
+        notifications.show({
+            title: 'Đã tạo thẻ bằng AI',
+            message: `Thêm ${items.length} thẻ. Hãy kiểm tra lại trước khi lưu chương.`,
+            color: 'green',
+        });
+    };
 
     return (
         <Card withBorder shadow = "sm" radius = "md" p = "xl" >
@@ -346,16 +360,33 @@ updateFlashcardItem(pageTempId, block.blockTempId, item.itemTempId, { backText: 
         ))}
 </Stack>
 
-    < Button
-variant = "subtle"
+    < Group gap = "xs" mt = "sm" >
+        <Button
+          variant="subtle"
 size = "xs"
-mt = "sm"
 leftSection = {< IconPlus size = { 14} />}
 onClick = {() => addFlashcardItem(pageTempId, block.blockTempId)}
-      >
+        >
     Thêm thẻ
         </Button>
-        </Card>
+        < Button
+variant = "light"
+color = "orange"
+size = "xs"
+leftSection = {< IconSparkles size = { 14} />}
+onClick = {() => setAiOpened(true)}
+        >
+    Sinh bằng AI
+        </Button>
+        </Group>
+
+        < AiGenerateModal
+opened = { aiOpened }
+onClose = {() => setAiOpened(false)}
+onGenerate = { handleAiGenerate }
+title = "Tự động sinh Flashcard bằng AI"
+    />
+    </Card>
   );
 }
 
@@ -368,6 +399,19 @@ function QuizBlockCard({ pageTempId, block }: { pageTempId: string; block: QuizB
     const setCorrectQuizOption = useChapterBuilderStore((s) => s.setCorrectQuizOption);
     const removeQuizOption = useChapterBuilderStore((s) => s.removeQuizOption);
     const removeBlock = useChapterBuilderStore((s) => s.removeBlock);
+    const appendAiQuizQuestions = useChapterBuilderStore((s) => s.appendAiQuizQuestions);
+    const [aiOpened, setAiOpened] = useState(false);
+
+    const handleAiGenerate = async (payload: AiGeneratePayload) => {
+        const questions = await generateQuiz(payload);
+        appendAiQuizQuestions(pageTempId, block.blockTempId, questions);
+        setAiOpened(false);
+        notifications.show({
+            title: 'Đã tạo câu hỏi bằng AI',
+            message: `Thêm ${questions.length} câu hỏi. Hãy kiểm tra lại trước khi lưu chương.`,
+            color: 'green',
+        });
+    };
 
     return (
         <Card withBorder shadow = "sm" radius = "md" p = "xl" >
@@ -507,16 +551,33 @@ updateQuizQuestion(pageTempId, block.blockTempId, question.questionTempId, {
         ))}
 </Stack>
 
-    < Button
-variant = "light"
+    < Group gap = "xs" mt = "md" >
+        <Button
+          variant="light"
 size = "xs"
-mt = "md"
 leftSection = {< IconPlus size = { 14} />}
 onClick = {() => addQuizQuestion(pageTempId, block.blockTempId)}
-      >
+        >
     Thêm câu hỏi
         </Button>
-        </Card>
+        < Button
+variant = "light"
+color = "orange"
+size = "xs"
+leftSection = {< IconSparkles size = { 14} />}
+onClick = {() => setAiOpened(true)}
+        >
+    Sinh bằng AI
+        </Button>
+        </Group>
+
+        < AiGenerateModal
+opened = { aiOpened }
+onClose = {() => setAiOpened(false)}
+onGenerate = { handleAiGenerate }
+title = "Tự động sinh Quiz bằng AI"
+    />
+    </Card>
   );
 }
 
@@ -629,13 +690,12 @@ export default function ChapterBuilderPage() {
     const [showAddMenu, setShowAddMenu] = useState(false);
 
     const hasHydratedRef = useRef(false);
-    // Tính trực tiếp từ dữ liệu server, không dùng useState để tránh lỗi ESLint cascading renders
     const originalAccessType = chapterDetail?.accessType ?? null;
 
     useEffect(() => {
         resetStore();
         hasHydratedRef.current = false;
-    }, [courseId, chapterId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [courseId, chapterId]);
 
     useEffect(() => {
         if (isEditMode && chapterDetail && !hasHydratedRef.current) {
@@ -685,7 +745,6 @@ const handleSubmitChapter = (isDraft: boolean) => {
         return;
     }
 
-    // Chặn lưu khi còn khối Media chưa upload tệp (chưa có mediaKey)
     const hasPendingMedia = pages.some((p) =>
         p.blocks.some(
             (b) => (b.blockType === 'IMAGE' || b.blockType === 'AUDIO' || b.blockType === 'VIDEO') && !b.mediaKey
