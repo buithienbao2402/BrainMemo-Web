@@ -17,7 +17,7 @@ export const courseManagementApi = {
         id: item.courseId ?? item.id,
         title: item.title,
         description: item.description,
-        coverImageUrl: item.cover_image_url ?? item.coverImageUrl,
+          coverImageUrl: item.coverImage ?? item.coverImageUrl ?? item.cover_image_url ?? null,
         accessType: item.access_type ?? item.accessType,
         status: item.status,
         tags: item.tags || [],
@@ -28,15 +28,15 @@ export const courseManagementApi = {
     };
   },
 
-  createCourse: async (payload: CreateCoursePayload): Promise<Course> => {
-    const body = {
-      title: payload.title,
-      description: payload.description,
-      cover_image_object_key: payload.coverImageObjectKey,
-      access_type: payload.accessType,
-      passcode: payload.passcode,
-      tags: payload.tags,
-    };
+    createCourse: async (payload: CreateCoursePayload): Promise<Course> => {
+        const body = {
+            title: payload.title,
+            description: payload.description,
+            coverImageObjectKey: payload.coverImageObjectKey,
+            accessType: payload.accessType,
+            passcode: payload.passcode,
+            tags: payload.tags,
+        };
 
     const response = await apiClient.post('/courses', body);
     const item = response.data.data;

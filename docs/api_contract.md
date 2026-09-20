@@ -69,22 +69,33 @@
 
 ---
 
-## 4. Media (MinIO — Presigned URL)
+## 4. Media (upload qua backend, lưu local `wwwroot/uploads`)
 
 | Method | Endpoint | Mô tả & Payload |
 |---|---|---|
-| POST | `/api/media/presigned-url` | `{ fileName, contentType, mediaType: "IMAGE"\|"AUDIO"\|"VIDEO" }` → `{ uploadUrl, objectKey, expiresAt }`. Client `PUT` file thẳng lên `uploadUrl` (MinIO), **không qua backend**. |
+| POST | `/api/media/upload` | *(auth)* `multipart/form-data`: `File`, `MediaType` (`IMAGE`\|`AUDIO`\|`VIDEO`) → `{ url, objectKey, fileName, mediaType, fileSize }` |
 
-**Luồng dùng:** FE gọi `presigned-url` → nhận `uploadUrl` + `objectKey` → FE `PUT` file trực tiếp lên MinIO → FE dùng `objectKey` (không phải URL public) khi tạo/sửa block hoặc course/avatar. Backend tự resolve `objectKey` → URL công khai khi trả dữ liệu, tránh nhận URL tùy ý từ client (an toàn hơn).
+**Luồng dùng:** FE gọi `POST /api/media/upload` ngay khi người dùng chọn tệp → nhận `url` (URL tuyệt đối, chỉ để preview) và `objectKey` (đường dẫn tương đối, vd `/uploads/images/abc.png`) → FE lưu `objectKey` vào DB thông qua:
+- `avatarUrl` (PUT `/api/users/me`)
+- `coverImageObjectKey` (POST/PUT `/api/courses`)
+- `mediaUrl` của block IMAGE/AUDIO/VIDEO (POST/PUT block)
 
-**Giới hạn định dạng/dung lượng (đề xuất, có thể chỉnh cấu hình sau):**
+Khi hiển thị, FE dùng `resolveMediaUrl()` để ghép origin của backend vào `objectKey`.
+
+**Giới hạn định dạng/dung lượng:**
 | Loại | Định dạng | Giới hạn |
 |---|---|---|
-| Ảnh (bìa khóa học, avatar, block IMAGE) | jpg, png, webp, gif | 5 MB |
-| Audio | mp3, wav, m4a | 20 MB |
-| Video | mp4, webm | 200 MB |
+| Ảnh (bìa khóa học, avatar, block IMAGE) | jpg, jpeg, png, webp, gif | 5 MB |
+| Audio | mp3, wav, ogg, m4a | 20 MB |
+| Video | mp4, webm, mov, mkv | 100 MB |
 
-**Xóa file:** không có endpoint xóa media riêng. Khi gọi `DELETE /api/blocks/{id}` với `block_type` là IMAGE/AUDIO/VIDEO, backend tự xóa object tương ứng trên MinIO.
+**Payload block media:**
+```json
+{ "blockType": "IMAGE", "orderIndex": 0, "mediaUrl": "/uploads/images/xyz.png" }
+```
+(Flashcard dùng key `flashcards`, không phải `cards`.)
+
+**Xóa file:** chưa có endpoint xóa media riêng; file cũ vẫn còn trên đĩa khi block bị xóa hoặc thay ảnh.
 
 ---
 

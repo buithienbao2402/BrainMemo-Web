@@ -100,6 +100,7 @@ public class PageService : IPageService
                 blockType = b.BlockType,
                 orderIndex = b.OrderIndex,
                 contentText = b.ContentText,
+                mediaUrl = b.MediaUrl,
                 quiz = b.Quiz == null ? null : new
                 {
                     b.Quiz.QuizId,

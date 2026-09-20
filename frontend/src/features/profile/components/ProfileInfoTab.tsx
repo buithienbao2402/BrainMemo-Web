@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Paper, TextInput, Textarea, Button, Stack, Group, FileButton, PasswordInput, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useMyProfile, useUpdateProfile, useChangePassword } from '../hooks/useProfile';
-import { getPresignedUrl, uploadToMinio } from '../api/profile.api';
+import { uploadMedia, getMediaErrorMessage } from '@/shared/api/mediaApi';
 import { UserAvatar } from '@/shared/components/UserAvatar';
 import { useNavigate } from 'react-router-dom';
 import type { AxiosError } from 'axios';
@@ -35,20 +35,19 @@ export function ProfileInfoTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
-  const handleAvatarChange = async (file: File | null) => {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { uploadUrl, objectKey } = await getPresignedUrl(file.name, file.type);
-      await uploadToMinio(uploadUrl, file);
-      setAvatarObjectKey(objectKey);
-      setAvatarPreview(URL.createObjectURL(file));
-    } catch {
-      notifications.show({ color: 'red', message: 'Tải ảnh đại diện thất bại' });
-    } finally {
-      setUploading(false);
-    }
-  };
+    const handleAvatarChange = async (file: File | null) => {
+        if (!file) return;
+        setUploading(true);
+        try {
+            const res = await uploadMedia(file, 'IMAGE');
+            setAvatarObjectKey(res.objectKey);   // lưu key vào DB khi bấm "Lưu thay đổi"
+            setAvatarPreview(res.url);           // preview bằng URL tuyệt đối
+        } catch (err) {
+            notifications.show({ color: 'red', message: getMediaErrorMessage(err, 'Tải ảnh đại diện thất bại') });
+        } finally {
+            setUploading(false);
+        }
+    };
 
   const handleSaveProfile = () => {
     if (!profile) return;

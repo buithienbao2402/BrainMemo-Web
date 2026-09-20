@@ -55,7 +55,6 @@ public class CourseController : ControllerBase
             {
                 return PasscodeErrorResponse(ex.Message);
             }
-            // PRIVATE hoặc các trường hợp 403 khác -> trả nguyên message nghiệp vụ
             return StatusCode(403, new ApiResponse<object> { Success = false, Message = ex.Message });
         }
     }
@@ -218,6 +217,22 @@ public class CourseController : ControllerBase
         int userId = int.Parse(User.FindFirst("userId")!.Value);
         var result = await _progressService.GetCourseProgressAsync(id, userId);
         return Ok(new ApiResponse<object> { Success = true, Message = "OK", Data = result });
+    }
+
+    // Trả cùng định dạng errors[] mà CreateCourse/UpdateCourse đã dùng cho PasscodeRequiredException,
+    // để FE xử lý thống nhất 1 chỗ (usePasscodeAccess) cho mọi API có PROTECTED.
+    private IActionResult PasscodeErrorResponse(string code)
+    {
+        string message = code == "PASSCODE_REQUIRED"
+            ? "Nội dung này yêu cầu mật khẩu truy cập."
+            : "Mật khẩu truy cập không đúng.";
+
+        return StatusCode(403, new ApiResponse<object>
+        {
+            Success = false,
+            Message = message,
+            Errors = new object[] { new { field = "passcode", code, message } }
+        });
     }
 
     private int? GetCurrentUserId()

@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
                 });
             }
 
-            // Gửi ngầm Refresh Token qua HttpOnly Cookie với thời hạn 30 ngày[cite: 1]
+            // Gửi ngầm Refresh Token qua HttpOnly Cookie với thời hạn 30 ngày
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -61,7 +61,8 @@ public class AuthController : ControllerBase
                     {
                         userId = result.User.UserId,
                         email = result.User.Email,
-                        fullName = result.User.FullName
+                        fullName = result.User.FullName,
+                        avatarUrl = result.User.AvatarUrl // Bổ sung để hiển thị avatar ngay sau khi đăng nhập
                     }
                 }
             });
