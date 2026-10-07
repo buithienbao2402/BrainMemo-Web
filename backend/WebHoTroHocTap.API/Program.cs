@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 2. Đăng ký các Service (Tầng Business)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
+builder.Services.AddHttpClient<IAiService, AiService>();
 builder.Services.AddScoped<IPageService, PageService>();
 builder.Services.AddScoped<IBlockService, BlockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -32,6 +33,13 @@ builder.Services.AddScoped<IProgressService, ProgressService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 
+// Typed HttpClient (dùng IHttpClientFactory bên dưới). Gemini có thể mất 10–30s nên đặt timeout 60s.
+builder.Services.AddHttpClient<IAiService, AiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
+
+// 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
