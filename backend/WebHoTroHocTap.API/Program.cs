@@ -29,8 +29,18 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IProgressService, ProgressService>();
+<<<<<<< HEAD
+<<<<<<< HEAD
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+=======
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 
+>>>>>>> main
+=======
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IInvitationService, InvitationService>();
+
+>>>>>>> be458c4790d8d57600f1c5e1132613079e1572ce
 // 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -163,6 +163,16 @@ public class PageController : ControllerBase
         }
     }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+   
+
+=======
+>>>>>>> main
+=======
+   
+
+>>>>>>> be458c4790d8d57600f1c5e1132613079e1572ce
     private int? GetCurrentUserId()
     {
         var claim = User.FindFirst("userId");
