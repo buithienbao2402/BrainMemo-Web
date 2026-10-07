@@ -238,3 +238,25 @@ Khi hiển thị, FE dùng `resolveMediaUrl()` để ghép origin của backend 
 | `EnrollmentStatus` | `LEARNING`, `COMPLETED` |
 | `InvitationStatus` | `PENDING`, `ACCEPTED`, `DECLINED` |
 | `NotificationType` | `NEW_CHAPTER`, `NEW_COMMENT`, `NEW_ENROLLMENT`, `COURSE_INVITATION`, `INVITATION_ACCEPTED` |
+
+
+## 14. Leaderboard (Trang chủ)
+
+Phạm vi thời gian: toàn bộ (chưa có tuần/tháng). Mọi khóa học tính như nhau (PUBLIC/PRIVATE/PROTECTED, mọi status); enrollment của chính creator vẫn được tính. Cả 2 endpoint không cần đăng nhập, cache server 60 giây, `limit` mặc định 10, tối đa 50.
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/api/leaderboard/courses?limit=10` | Top khóa học theo số enrollment. Hòa điểm: khóa tạo mới hơn trước, rồi `course_id` nhỏ hơn. Chỉ lấy khóa có ≥ 1 học viên. |
+| GET | `/api/leaderboard/creators?limit=10` | Top creator theo số học viên **distinct** (`COUNT(DISTINCT enrollment.user_id)`) trên mọi khóa học của họ. Hòa điểm: nhiều khóa học hơn trước, rồi `user_id` nhỏ hơn. |
+
+```json
+// GET /api/leaderboard/courses -> data
+[{ "rank": 1, "courseId": 3, "title": "...", "coverImage": "/uploads/images/x.png",
+   "creatorName": "...", "participantsCount": 512 }]
+
+// GET /api/leaderboard/creators -> data
+[{ "rank": 1, "userId": 7, "fullName": "...", "avatarUrl": null,
+   "studentsCount": 124, "coursesCount": 12 }]
+```
+
+Thay thế endpoint cũ `GET /api/leaderboard` (xếp hạng học viên theo điểm) — đã bị gỡ.
