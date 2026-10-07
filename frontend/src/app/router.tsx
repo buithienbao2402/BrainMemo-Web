@@ -18,68 +18,69 @@ import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 import { LearningDashboardPage } from '@/features/learning-dashboard/pages/LearningDashboardPage';
 
 export function AppRouter() {
-  const { accessToken } = useAuthStore();
+    const { accessToken } = useAuthStore();
 
-  return (
-    <Routes>
-      {/* Đã đăng nhập mà cố vào /login hay /register -> văng về Trang chủ */}
-      <Route path="/login" element={accessToken ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/register" element={accessToken ? <Navigate to="/" replace /> : <RegisterPage />} />
-      <Route path="/forgot-password" element={accessToken ? <Navigate to="/" replace /> : <ForgotPasswordPage />} />
+    return (
+        <Routes>
+        {/* Auth Routes */ }
+        < Route path = "/login" element = { accessToken?<Navigate to = "/" replace /> : <LoginPage />} / >
+            <Route path="/register" element = { accessToken?<Navigate to = "/" replace /> : <RegisterPage />} / >
+                <Route path="/forgot-password" element = { accessToken?<Navigate to = "/" replace /> : <ForgotPasswordPage />} / >
 
-      {/* ========== LUỒNG CREATOR ========== */}
-      <Route
-        path="/creator/dashboard"
-        element={accessToken ? <CreatorDashboard /> : <Navigate to="/login" replace />}
+                {/* ========== LUỒNG CREATOR ========== */ }
+                    < Route
+    path = "/creator/dashboard"
+    element = { accessToken?<CreatorDashboard /> : <Navigate to="/login" replace />}
       />
-      <Route
-        path="/creator/courses/:id"
-        element={
-          accessToken ? (
+
+{/* Đổi :id thành :courseId để đồng nhất toàn bộ luồng Creator */ }
+<Route
+        path="/creator/courses/:courseId"
+element = {
+    accessToken?(
             <CourseDashboardLayout>
-              <CourseDetailDashboard />
-            </CourseDashboardLayout>
+    <CourseDetailDashboard />
+    </CourseDashboardLayout>
           ) : (
-            <Navigate to="/login" replace />
+    <Navigate to= "/login" replace />
           )
         }
       />
-      <Route
-        path="/creator/courses/:courseId/chapters/new"
-        element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />}
+    < Route
+path = "/creator/courses/:courseId/chapters/new"
+element = { accessToken?<ChapterBuilderPage /> : <Navigate to="/login" replace />}
       />
-      <Route
-        path="/creator/courses/:courseId/chapters/:chapterId/edit"
-        element={accessToken ? <ChapterBuilderPage /> : <Navigate to="/login" replace />}
+    < Route
+path = "/creator/courses/:courseId/chapters/:chapterId/edit"
+element = { accessToken?<ChapterBuilderPage /> : <Navigate to="/login" replace />}
       />
 
-      {/* ========== LUỒNG HỌC VIÊN ========== */}
-      <Route
+{/* ========== LUỒNG HỌC VIÊN ========== */ }
+<Route
         path="/courses/:id"
-        element={
-          accessToken ? (
+element = {
+    accessToken?(
             <StudentCourseLayout>
-              <CourseDetailPage />
-            </StudentCourseLayout>
+    <CourseDetailPage />
+    </StudentCourseLayout>
           ) : (
-            <Navigate to="/login" replace />
+    <Navigate to= "/login" replace />
           )
         }
       />
-      <Route
-        path="/courses/:courseId/learn/:chapterId/:pageId?"
-        element={accessToken ? <ChapterReadingPage /> : <Navigate to="/login" replace />}
+    < Route
+path = "/courses/:courseId/learn/:chapterId/:pageId?"
+element = { accessToken?<ChapterReadingPage /> : <Navigate to="/login" replace />}
       />
 
-      <Route path="/" element={accessToken ? (<MainLayout><HomePage /></MainLayout>) : (<Navigate to="/login" replace />)} />
-      <Route path="/explore" element={accessToken ? (<MainLayout><ExplorePage /></MainLayout>) : (<Navigate to="/login" replace />)} />
-      <Route path="/learning/dashboard" element={accessToken ? (<MainLayout><LearningDashboardPage /></MainLayout>) : (<Navigate to="/login" replace />)} />
-      <Route path="/profile" element={accessToken ? (<MainLayout><ProfilePage /></MainLayout>) : (<Navigate to="/login" replace />)} />
+{/* ========== CÁC TRANG CHÍNH ========== */ }
+<Route path="/" element = { accessToken?(<MainLayout> <HomePage /></MainLayout >) : (<Navigate to= "/login" replace />)} />
+    < Route path = "/explore" element = { accessToken?(<MainLayout> <ExplorePage /></MainLayout >) : (<Navigate to= "/login" replace />)} />
+        < Route path = "/learning/dashboard" element = { accessToken?(<MainLayout> <LearningDashboardPage /></MainLayout >) : (<Navigate to= "/login" replace />)} />
+            < Route path = "/profile" element = { accessToken?(<MainLayout> <ProfilePage /></MainLayout >) : (<Navigate to= "/login" replace />)} />
 
-      {/* Route dự phòng: mọi path lạ -> Trang chủ (Home tự lo check login) */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-      
+{/* Fallback route */ }
+<Route path="*" element = {< Navigate to = "/" replace />} />
     </Routes>
-
   );
 }

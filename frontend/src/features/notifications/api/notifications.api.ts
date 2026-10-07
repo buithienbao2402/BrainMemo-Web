@@ -23,3 +23,17 @@ export async function fetchNotifications(page: number, pageSize = 10): Promise<N
 export async function markAllNotificationsRead(): Promise<void> {
   await apiClient.patch('/notifications/read-all', {});
 }
+
+export interface InvitationRespondResult {
+    invitationId: number;
+    status: 'ACCEPTED' | 'DECLINED';
+    courseId: number;
+}
+
+export async function respondInvitation(invitationId: number, accept: boolean): Promise<InvitationRespondResult> {
+    const { data } = await apiClient.post<ApiResponse<InvitationRespondResult>>(
+        `/invitations/${invitationId}/respond`,
+        { accept }
+    );
+    return data.data;
+}

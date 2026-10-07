@@ -23,7 +23,9 @@ export async function getCourseInvitationsReal(courseId: string): Promise<Course
   const response = await apiClient.get(`/courses/${courseId}/invitations`);
   const data = response.data.data;
 
-  return data.map((inv: any) => ({
+    return data.map((inv: any) => ({
+    inviteeFullName: inv.invitee_full_name ?? inv.inviteeFullName ?? null,
+    inviteeAvatarUrl: inv.invitee_avatar_url ?? inv.inviteeAvatarUrl ?? null,
     invitationId: inv.invitation_id ?? inv.invitationId,
     courseId: inv.course_id ?? inv.courseId,
     inviterId: inv.inviter_id ?? inv.inviterId,
