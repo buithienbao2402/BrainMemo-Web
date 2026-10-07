@@ -114,6 +114,7 @@ public class PageController : ControllerBase
 
     }
 
+
     [HttpPost("api/pages/{id}/complete")]
     [Authorize]
     public async Task<IActionResult> CompletePage(int id)
@@ -162,8 +163,11 @@ public class PageController : ControllerBase
         }
     }
 
+<<<<<<< HEAD
    
 
+=======
+>>>>>>> main
     private int? GetCurrentUserId()
     {
         var claim = User.FindFirst("userId");

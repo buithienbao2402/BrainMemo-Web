@@ -219,7 +219,10 @@ public class CourseController : ControllerBase
         return Ok(new ApiResponse<object> { Success = true, Message = "OK", Data = result });
     }
 
+<<<<<<< HEAD
     
+=======
+>>>>>>> main
     private int? GetCurrentUserId()
     {
         var claim = User.FindFirst("userId");

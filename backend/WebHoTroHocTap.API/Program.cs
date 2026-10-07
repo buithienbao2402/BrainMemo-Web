@@ -29,7 +29,12 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IProgressService, ProgressService>();
+<<<<<<< HEAD
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+=======
+builder.Services.AddScoped<IInvitationService, InvitationService>();
+
+>>>>>>> main
 // 3. Cấu hình xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
