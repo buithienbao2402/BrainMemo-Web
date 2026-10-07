@@ -1,21 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { Box, Grid, Stack, Group, Text, ScrollArea, Loader, Paper } from '@mantine/core';
-import { IconCrown, IconUsers } from '@tabler/icons-react';
+import { IconUsers } from '@tabler/icons-react';
 import { useNewestCourses, useCompletedCourses, useRecentlyUpdatedCourses } from '../hooks/useHomeSections';
 import { useLearningDashboard } from '@/features/learning-dashboard/hooks/useLearningDashboard';
 import { CourseMiniCard } from '../components/CourseMiniCard';
 import { ContinueLearningCard } from '../components/ContinueLearningCard';
-import { SidebarPlaceholderCard } from '../components/SidebarPlaceholderCard';
 import { formatPostedTime } from '@/features/courses/utils/format';
-import { LeaderboardWidget } from '../components/LeaderboardWidget';
+import { TopCoursesWidget } from '../components/Topcourseswidget';
+import { TopCreatorsWidget} from '../components/Topcreatorswidget';
 
 function SectionHeader({ title, onSeeMore }: { title: string; onSeeMore: () => void }) {
     return (
-        <Group justify= "space-between" mb = "sm" >
-            <Text fw={ 700 } c = "orange" > { title } </Text>
-                < Text size = "sm" c = "orange" style = {{ cursor: 'pointer' }
-} onClick = { onSeeMore } > Xem tất cả ›</Text>
-    </Group>
+        <Group justify="space-between" mb="sm" >
+            <Text fw={700} c="orange" > {title} </Text>
+            < Text size="sm" c="orange" style={{ cursor: 'pointer' }
+            } onClick={onSeeMore} > Xem tất cả ›</Text>
+        </Group>
     );
 }
 
@@ -27,105 +27,105 @@ export function HomePage() {
     const learningDashboard = useLearningDashboard();
 
     return (
-        <Box p= "lg" >
-        <Grid styles={ { root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } } }>
-            <Grid.Col span={ { base: 12, md: 8 } }>
-                <Stack gap="lg" >
-                    <Paper shadow="sm" radius = "md" p = "lg" >
-                        <SectionHeader title="MỚI RA MẮT" onSeeMore = {() => navigate('/explore?sort=newest')
-} />
-{
-    newest.isLoading ? <Loader color="orange" /> : (
-        <ScrollArea type= "auto" offsetScrollbars >
-            <Group gap="md" wrap = "nowrap" >
-            { newest.data?.items.map((c) => <CourseMiniCard key={ c.courseId } course = { c } />) }
-                </Group>
-                </ScrollArea>
-                            )
-}
-</Paper>
+        <Box p="lg" >
+            <Grid styles={{ root: { '--grid-gutter': 'var(--mantine-spacing-lg)' } }}>
+                <Grid.Col span={{ base: 12, md: 8 }}>
+                    <Stack gap="lg" >
+                        <Paper shadow="sm" radius="md" p="lg" >
+                            <SectionHeader title="MỚI RA MẮT" onSeeMore={() => navigate('/explore?sort=newest')
+                            } />
+                            {
+                                newest.isLoading ? <Loader color="orange" /> : (
+                                    <ScrollArea type="auto" offsetScrollbars >
+                                        <Group gap="md" wrap="nowrap" >
+                                            {newest.data?.items.map((c) => <CourseMiniCard key={c.courseId} course={c} />)}
+                                        </Group>
+                                    </ScrollArea>
+                                )
+                            }
+                        </Paper>
 
-    < Paper shadow = "sm" radius = "md" p = "lg" >
-        <SectionHeader title="KHÓA HỌC ĐÃ HOÀN THÀNH" onSeeMore = {() => navigate('/explore?status=COMPLETED')} />
-{
-    completed.isLoading ? <Loader color="orange" /> : (
-        <ScrollArea type= "auto" offsetScrollbars >
-            <Group gap="md" wrap = "nowrap" >
-            { completed.data?.items.map((c) => <CourseMiniCard key={ c.courseId } course = { c } />) }
-                </Group>
-                </ScrollArea>
-                            )
-}
-</Paper>
+                        < Paper shadow="sm" radius="md" p="lg" >
+                            <SectionHeader title="KHÓA HỌC ĐÃ HOÀN THÀNH" onSeeMore={() => navigate('/explore?status=COMPLETED')} />
+                            {
+                                completed.isLoading ? <Loader color="orange" /> : (
+                                    <ScrollArea type="auto" offsetScrollbars >
+                                        <Group gap="md" wrap="nowrap" >
+                                            {completed.data?.items.map((c) => <CourseMiniCard key={c.courseId} course={c} />)}
+                                        </Group>
+                                    </ScrollArea>
+                                )
+                            }
+                        </Paper>
 
-    < Paper shadow = "sm" radius = "md" p = "lg" >
-        <SectionHeader title="MỚI CẬP NHẬT" onSeeMore = {() => navigate('/explore?sort=updated')} />
-{
-    recent.isLoading ? <Loader color="orange" /> : (
-        <Stack gap= "sm" >
-        {
-            recent.data?.items.map((c) => (
-                <Group
-                                            key= { c.courseId }
-                                            justify = "space-between"
-                                            wrap = "nowrap"
-                                            style = {{ cursor: 'pointer' }}
-    onClick = {() => navigate(`/courses/${c.courseId}`)
-}
-                                        >
-{/* Trái: tên khóa học + tác giả */ }
-    < Stack gap = { 0} style = {{ flex: 1, minWidth: 0 }}>
-        <Text size="sm" fw = { 600} lineClamp = { 1} > { c.title } </Text>
-            < Text size = "xs" c = "dimmed" lineClamp = { 1} > { c.creator.fullName } </Text>
-                </Stack>
+                        < Paper shadow="sm" radius="md" p="lg" >
+                            <SectionHeader title="MỚI CẬP NHẬT" onSeeMore={() => navigate('/explore?sort=updated')} />
+                            {
+                                recent.isLoading ? <Loader color="orange" /> : (
+                                    <Stack gap="sm" >
+                                        {
+                                            recent.data?.items.map((c) => (
+                                                <Group
+                                                    key={c.courseId}
+                                                    justify="space-between"
+                                                    wrap="nowrap"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => navigate(`/courses/${c.courseId}`)
+                                                    }
+                                                >
+                                                    {/* Trái: tên khóa học + tác giả */}
+                                                    < Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                                                        <Text size="sm" fw={600} lineClamp={1} > {c.title} </Text>
+                                                        < Text size="xs" c="dimmed" lineClamp={1} > {c.creator.fullName} </Text>
+                                                    </Stack>
 
-{/* Giữa: tên chương mới nhất */ }
-<Text
-                                                size="xs"
-c = "orange"
-fw = { 500}
-ta = "center"
-lineClamp = { 1}
-style = {{ flex: 1, minWidth: 0 }}
-                                            >
-{ c.latestChapterTitle ?? 'Chưa có chương nào' }
-    </Text>
+                                                    {/* Giữa: tên chương mới nhất */}
+                                                    <Text
+                                                        size="xs"
+                                                        c="orange"
+                                                        fw={500}
+                                                        ta="center"
+                                                        lineClamp={1}
+                                                        style={{ flex: 1, minWidth: 0 }}
+                                                    >
+                                                        {c.latestChapterTitle ?? 'Chưa có chương nào'}
+                                                    </Text>
 
-{/* Phải: số học viên + thời gian cập nhật */ }
-<Stack gap={ 2 } align = "flex-end" style = {{ flexShrink: 0 }}>
-    <Text size="xs" c = "dimmed" >
-        <IconUsers size={ 12 } style = {{ verticalAlign: 'middle', marginRight: 4 }} />
-{ c.participantsCount } học viên
-    </Text>
-{
-    c.latestChapterPublishedAt && (
-        <Text size="xs" c = "dimmed" >
-        { formatPostedTime(c.latestChapterPublishedAt) }
-            </Text>
-                                                )
-}
-</Stack>
-    </Group>
-                                    ))}
-</Stack>
+                                                    {/* Phải: số học viên + thời gian cập nhật */}
+                                                    <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
+                                                        <Text size="xs" c="dimmed" >
+                                                            <IconUsers size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                                            {c.participantsCount} học viên
+                                                        </Text>
+                                                        {
+                                                            c.latestChapterPublishedAt && (
+                                                                <Text size="xs" c="dimmed" >
+                                                                    {formatPostedTime(c.latestChapterPublishedAt)}
+                                                                </Text>
+                                                            )
+                                                        }
+                                                    </Stack>
+                                                </Group>
+                                            ))}
+                                    </Stack>
+                                )}
+                        </Paper>
+                    </Stack>
+                </Grid.Col>
+
+                < Grid.Col span={{ base: 12, md: 4 }}>
+                    <Stack gap="lg" >
+                        {
+                            learningDashboard.isLoading ? (
+                                <Paper shadow="sm" radius="md" p="lg" > <Loader color="orange" size="sm" /> </Paper>
+                            ) : (
+                                <ContinueLearningCard courses={learningDashboard.data?.courses.learning ?? []} />
                             )}
-</Paper>
-    </Stack>
-    </Grid.Col>
-
-    < Grid.Col span = {{ base: 12, md: 4 }}>
-        <Stack gap="lg" >
-            {
-                learningDashboard.isLoading ? (
-                    <Paper shadow= "sm" radius="md" p="lg" > <Loader color="orange" size = "sm" /> </Paper>
-                        ) : (
-                        <ContinueLearningCard courses={ learningDashboard.data?.courses.learning ?? [] } />
-                        )}
-<LeaderboardWidget />
-    < SidebarPlaceholderCard icon = {< IconCrown size = { 28} />} title = "Top Creator" />
-        </Stack>
-        </Grid.Col>
-        </Grid>
+                        <TopCoursesWidget />
+                        <TopCreatorsWidget />
+                    </Stack>
+                </Grid.Col>
+            </Grid>
         </Box>
     );
 }
