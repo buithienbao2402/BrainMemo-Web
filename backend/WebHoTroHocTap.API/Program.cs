@@ -30,6 +30,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IProgressService, ProgressService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IInvitationService, InvitationService>();
 
 // Typed HttpClient (dùng IHttpClientFactory bên dưới). Gemini có thể mất 10–30s nên đặt timeout 60s.
 builder.Services.AddHttpClient<IAiService, AiService>(client =>

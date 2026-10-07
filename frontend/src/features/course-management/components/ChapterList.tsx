@@ -56,8 +56,8 @@ function EmptyState({ title, description }: { title: string; description: string
 }
 
 export function ChapterList() {
-  const { id } = useParams<{ id: string }>();
-  const courseId = Number(id);
+  const { courseId: courseIdParam } = useParams<{ courseId: string }>();
+  const courseId = Number(courseIdParam);
   const navigate = useNavigate();
 
   // Tách 2 query độc lập — mỗi tab có cache/loading state riêng
@@ -156,7 +156,7 @@ export function ChapterList() {
                     variant="subtle"
                     color="gray"
                     aria-label="Xem chương"
-                    onClick={() => navigate(`/creator/chapters/${chapter.id}`)}
+                    onClick={() => navigate(`/courses/${courseId}/learn/${chapter.id}`)}
                   >
                     <IconEye size={16} />
                   </ActionIcon>

@@ -114,6 +114,7 @@ public class PageController : ControllerBase
 
     }
 
+
     [HttpPost("api/pages/{id}/complete")]
     [Authorize]
     public async Task<IActionResult> CompletePage(int id)
@@ -160,20 +161,6 @@ public class PageController : ControllerBase
         {
             return BadRequest(new ApiResponse<object> { Success = false, Message = ex.Message });
         }
-    }
-
-    private IActionResult PasscodeErrorResponse(string code)
-    {
-        string message = code == "PASSCODE_REQUIRED"
-            ? "Nội dung này yêu cầu mật khẩu truy cập."
-            : "Mật khẩu truy cập không đúng.";
-
-        return StatusCode(403, new ApiResponse<object>
-        {
-            Success = false,
-            Message = message,
-            Errors = new object[] { new { field = "passcode", code, message } }
-        });
     }
 
     private int? GetCurrentUserId()

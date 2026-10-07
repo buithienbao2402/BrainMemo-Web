@@ -4,7 +4,6 @@ import {
   Anchor,
   Avatar,
   Badge,
-  Button,
   Card,
   Divider,
   Group,
@@ -22,7 +21,6 @@ import {
   IconEye,
   IconLock,
   IconPencil,
-  IconUserPlus,
   IconX,
 } from '@tabler/icons-react';
 import type {
@@ -67,7 +65,7 @@ function formatDate(isoDate: string): string {
 
 export function CourseOverviewTab({ course, stats, invitations }: CourseOverviewTabProps) {
   // Route: /creator/courses/:id — tab này không nhận courseId qua props nên lấy thẳng từ URL.
-  const { id: courseId } = useParams<{ id: string }>();
+  const courseId = String(course.courseId);
   const navigate = useNavigate();
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
@@ -78,7 +76,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
     setEditingCourse({
       id: courseId,
       title: course.title,
-      description: course.description,
+      description: course.description ?? '',
       coverImageUrl: course.coverImageUrl,
       tags: course.tags,
       accessType: course.accessType,
@@ -120,12 +118,12 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                 </ActionIcon>
               </Group>
             </Group>
-  
+
             <Group align="flex-start" wrap="nowrap">
               <ThemeIcon size={56} radius="md" color="orange" variant="light">
                 <IconBrandPython size={30} />
               </ThemeIcon>
-  
+
               <Stack gap={4} style={{ flex: 1 }}>
                 <Text fw={600}>{course.title}</Text>
                 <Text size="sm" c="dimmed">
@@ -133,9 +131,9 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                 </Text>
               </Stack>
             </Group>
-  
+
             <Divider my="md" />
-  
+
             <Stack gap="xs">
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">
@@ -161,7 +159,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               </Group>
             </Stack>
           </Card>
-  
+
           {/* Cột giữa: 2 card thống kê */}
           <Stack gap="lg">
             <Card withBorder radius="md" padding="lg" style={{ flex: 1 }}>
@@ -181,7 +179,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               </Text>
             </Card>
           </Stack>
-  
+
           {/* Cột phải: tỷ lệ hoàn thành */}
           <Card
             withBorder
@@ -207,16 +205,11 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
             </Stack>
           </Card>
         </SimpleGrid>
-  
+
         {/* Danh sách học viên (lời mời đang chờ + học viên đã tham gia) */}
         <Card withBorder radius="md" padding="lg">
-          <Group justify="space-between" mb="md">
-            <Title order={4}>Danh sách học viên</Title>
-            <Button leftSection={<IconUserPlus size={16} />} variant="light" color="orange" size="sm">
-              Thêm học viên
-            </Button>
-          </Group>
-  
+          <Title order={4} mb="md">Danh sách học viên</Title>
+
           {invitations.length > 0 && (
             <>
               <Stack gap="sm">
@@ -242,7 +235,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               <Divider my="sm" />
             </>
           )}
-  
+
           {stats.students.length === 0 ? (
             <Text size="sm" c="dimmed">
               Chưa có học viên nào tham gia khóa học này.
@@ -257,7 +250,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
                   Tiến độ
                 </Text>
               </Group>
-  
+
               {stats.students.map((student) => (
                 <Group key={student.userId} wrap="nowrap">
                   <Avatar src={student.avatarUrl ?? undefined} radius="xl" color="orange">
@@ -282,7 +275,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
               ))}
             </Stack>
           )}
-  
+
           <Group justify="flex-end" mt="md">
             <Anchor component="button" type="button" size="sm" c="orange">
               Xem tất cả

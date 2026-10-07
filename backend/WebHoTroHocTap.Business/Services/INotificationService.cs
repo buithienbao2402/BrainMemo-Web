@@ -2,7 +2,8 @@
 
 public interface INotificationService
 {
-    Task CreateNotificationAsync(int userId, string type, string content);
+    Task CreateNotificationAsync(int userId, string type, string content,
+        string? relatedEntityType = null, int? relatedEntityId = null);
     Task CreateNotificationsAsync(IEnumerable<int> userIds, string type, string content);
     Task<object> GetNotificationsAsync(int userId, int page, int pageSize);
     Task<int> GetUnreadCountAsync(int userId);
