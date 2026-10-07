@@ -65,7 +65,7 @@ function formatDate(isoDate: string): string {
 
 export function CourseOverviewTab({ course, stats, invitations }: CourseOverviewTabProps) {
   // Route: /creator/courses/:id — tab này không nhận courseId qua props nên lấy thẳng từ URL.
-  const { id: courseId } = useParams<{ id: string }>();
+  const courseId = String(course.courseId);
   const navigate = useNavigate();
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
@@ -76,7 +76,7 @@ export function CourseOverviewTab({ course, stats, invitations }: CourseOverview
     setEditingCourse({
       id: courseId,
       title: course.title,
-      description: course.description,
+      description: course.description ?? '',
       coverImageUrl: course.coverImageUrl,
       tags: course.tags,
       accessType: course.accessType,
